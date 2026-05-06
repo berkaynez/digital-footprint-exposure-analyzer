@@ -4,6 +4,7 @@ const {
   generateUsernameVariations,
 } = require('../utils/usernameGenerator')
 const { similarityScore } = require('../utils/similarity')
+const { checkGitHubUsername } = require('../utils/github')
 
 const router = express.Router()
 
@@ -13,29 +14,19 @@ function riskFromScore(score) {
   return 'low'
 }
 
-function mockPlatformScan(username, similarity) {
-  const platforms = ['GitHub', 'Reddit', 'Medium', 'Pinterest', 'Instagram']
-
-  const possibleGithubAndReddit = similarity >= 0.8
+function mockPlatformsForUsername(username, similarity) {
   const possibleInstagram = username.includes('_')
   const possibleMedium = username.length > 10
 
-  return platforms.map((name) => {
-    let found = false
-
-    if (possibleGithubAndReddit && (name === 'GitHub' || name === 'Reddit')) {
-      found = true
-    } else if (possibleInstagram && name === 'Instagram') {
-      found = true
-    } else if (possibleMedium && name === 'Medium') {
-      found = true
-    }
-
-    return { name, found }
-  })
+  return [
+    { name: 'Reddit', found: similarity >= 0.8 },
+    { name: 'Medium', found: possibleMedium },
+    { name: 'Pinterest', found: false },
+    { name: 'Instagram', found: possibleInstagram },
+  ]
 }
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { email, username } = req.body || {}
 
   if (typeof email !== 'string' || typeof username !== 'string') {
@@ -49,15 +40,24 @@ router.post('/', (req, res) => {
 
   const variations = generateUsernameVariations(trimmedUsername)
 
-  const results = variations.map((variation) => {
-    const score = similarityScore(trimmedUsername, variation)
-    return {
-      username: variation,
-      similarity: score,
-      risk: riskFromScore(score),
-      platforms: mockPlatformScan(variation, score),
-    }
-  })
+  const results = await Promise.all(
+    variations.map(async (variation) => {
+      const score = similarityScore(trimmedUsername, variation)
+
+      const github = await checkGitHubUsername(variation)
+      const platforms = [
+        { name: 'GitHub', ...github },
+        ...mockPlatformsForUsername(variation, score),
+      ]
+
+      return {
+        username: variation,
+        similarity: score,
+        risk: riskFromScore(score),
+        platforms,
+      }
+    }),
+  )
 
   return res.json({
     email: trimmedEmail,
