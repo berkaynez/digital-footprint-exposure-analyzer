@@ -134,6 +134,34 @@ function App() {
               </dl>
 
               <div className="variations">
+                {analysisStatus.data?.summary && (
+                  <div className="summary" style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                    <h3 className="resultTitle">Exposure Summary</h3>
+                    <dl className="kv" style={{ marginTop: '0.5rem' }}>
+                      <div className="kvRow">
+                        <dt>Exposure Score</dt>
+                        <dd style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{analysisStatus.data.summary.exposureScore}/100</dd>
+                      </div>
+                      <div className="kvRow">
+                        <dt>Verified matches</dt>
+                        <dd>{analysisStatus.data.summary.verifiedMatchCount}</dd>
+                      </div>
+                      <div className="kvRow">
+                        <dt>Simulated matches</dt>
+                        <dd>{analysisStatus.data.summary.simulatedMatchCount}</dd>
+                      </div>
+                      <div className="kvRow">
+                        <dt>Risk variations</dt>
+                        <dd>
+                          <span className="badge badge--high" style={{marginRight: '4px'}}>{analysisStatus.data.summary.highRiskCount} High</span>
+                          <span className="badge badge--medium" style={{marginRight: '4px'}}>{analysisStatus.data.summary.mediumRiskCount} Medium</span>
+                          <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} Low</span>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                )}
+
                 <h3 className="resultTitle">Analysis results</h3>
 
                 {analysisStatus.state === 'loading' && <p>Analyzing…</p>}
@@ -145,12 +173,21 @@ function App() {
                     {analysisStatus.data?.results?.length ? (
                       <ul className="variationList">
                         {analysisStatus.data.results.map((r) => {
-                          const matchedPlatforms = Array.isArray(r.platforms)
-                            ? r.platforms
-                                .filter((p) => p && p.found === true)
-                                .map((p) => p.name)
-                                .filter(Boolean)
+                          const platforms = Array.isArray(r.platforms)
+                            ? r.platforms.filter(
+                                (p) => p && typeof p.name === 'string',
+                              )
                             : []
+
+                          const github = platforms.find((p) => p.name === 'GitHub')
+                          const githubUnavailable = github?.error === true
+
+                          const matchedPlatforms = platforms
+                            .filter((p) => p.found === true)
+                            .map((p) => {
+                              if (p.name === 'GitHub') return 'GitHub (verified)'
+                              return `${p.name} (simulated)`
+                            })
 
                           return (
                             <li key={r.username} className="resultItem">
@@ -176,6 +213,12 @@ function App() {
                                   'No possible platform matches'
                                 )}
                               </div>
+
+                              {githubUnavailable && (
+                                <div className="platformNote">
+                                  GitHub check unavailable
+                                </div>
+                              )}
                             </li>
                           )
                         })}

@@ -59,9 +59,42 @@ router.post('/', async (req, res) => {
     }),
   )
 
+  let highRiskCount = 0
+  let mediumRiskCount = 0
+  let lowRiskCount = 0
+  let verifiedMatchCount = 0
+  let simulatedMatchCount = 0
+
+  results.forEach(r => {
+    if (r.risk === 'high') highRiskCount++
+    else if (r.risk === 'medium') mediumRiskCount++
+    else if (r.risk === 'low') lowRiskCount++
+
+    r.platforms.forEach(p => {
+      if (p.found) {
+        if (p.name === 'GitHub') verifiedMatchCount++
+        else simulatedMatchCount++
+      }
+    })
+  })
+
+  let exposureScore = (highRiskCount * 3) + (mediumRiskCount * 2) + (lowRiskCount * 1) + (verifiedMatchCount * 10) + (simulatedMatchCount * 2)
+  exposureScore = Math.min(exposureScore, 100)
+
+  const summary = {
+    totalVariations: results.length,
+    highRiskCount,
+    mediumRiskCount,
+    lowRiskCount,
+    verifiedMatchCount,
+    simulatedMatchCount,
+    exposureScore
+  }
+
   return res.json({
     email: trimmedEmail,
     username: trimmedUsername,
+    summary,
     results,
   })
 })
