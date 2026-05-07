@@ -158,6 +158,37 @@ function App() {
                           <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} Low</span>
                         </dd>
                       </div>
+                      <div className="kvRow">
+                        <dt>Email Exposure Check</dt>
+                        <dd>
+                          {analysisStatus.data.emailExposure ? (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span>
+                                {analysisStatus.data.emailExposure.error ? (
+                                  'Email exposure check unavailable'
+                                ) : analysisStatus.data.emailExposure.found ? (
+                                  <span style={{ color: 'var(--color-error)' }}>{analysisStatus.data.emailExposure.breachCount} possible breaches found</span>
+                                ) : (
+                                  <span style={{ color: 'var(--color-success)' }}>No public breach exposure found</span>
+                                )}
+                              </span>
+                              <span style={{ fontSize: '0.8em', opacity: 0.6 }}>
+                                Provider: {analysisStatus.data.emailExposure.provider}
+                              </span>
+                              {analysisStatus.data.emailExposure.sources?.length > 0 && (
+                                <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
+                                  Sources: {analysisStatus.data.emailExposure.sources.map(s => `${s.name} (${s.date || 'unknown'})`).join(', ')}
+                                </span>
+                              )}
+                              {analysisStatus.data.emailExposure.exposedFields?.length > 0 && (
+                                <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
+                                  Exposed data types: {analysisStatus.data.emailExposure.exposedFields.join(', ')}
+                                </span>
+                              )}
+                            </div>
+                          ) : 'Pending...'}
+                        </dd>
+                      </div>
                     </dl>
                   </div>
                 )}

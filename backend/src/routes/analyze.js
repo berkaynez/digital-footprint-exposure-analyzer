@@ -5,6 +5,7 @@ const {
 } = require('../utils/usernameGenerator')
 const { similarityScore } = require('../utils/similarity')
 const { checkGitHubUsername } = require('../utils/github')
+const { checkEmailExposure } = require('../utils/breachProviders')
 
 const router = express.Router()
 
@@ -91,10 +92,13 @@ router.post('/', async (req, res) => {
     usernameReuseRiskScore
   }
 
+  const emailExposure = await checkEmailExposure(trimmedEmail)
+
   return res.json({
     email: trimmedEmail,
     username: trimmedUsername,
     summary,
+    emailExposure,
     results,
   })
 })
