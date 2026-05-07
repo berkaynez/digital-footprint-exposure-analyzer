@@ -78,8 +78,8 @@ router.post('/', async (req, res) => {
     })
   })
 
-  let exposureScore = (highRiskCount * 3) + (mediumRiskCount * 2) + (lowRiskCount * 1) + (verifiedMatchCount * 10) + (simulatedMatchCount * 2)
-  exposureScore = Math.min(exposureScore, 100)
+  let usernameReuseRiskScore = (highRiskCount * 1) + (mediumRiskCount * 0.5) + (lowRiskCount * 0) + (verifiedMatchCount * 20) + (simulatedMatchCount * 0.25)
+  usernameReuseRiskScore = Math.min(Math.round(usernameReuseRiskScore), 100)
 
   const summary = {
     totalVariations: results.length,
@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
     lowRiskCount,
     verifiedMatchCount,
     simulatedMatchCount,
-    exposureScore
+    usernameReuseRiskScore
   }
 
   return res.json({

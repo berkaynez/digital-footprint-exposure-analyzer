@@ -139,8 +139,8 @@ function App() {
                     <h3 className="resultTitle">Exposure Summary</h3>
                     <dl className="kv" style={{ marginTop: '0.5rem' }}>
                       <div className="kvRow">
-                        <dt>Exposure Score</dt>
-                        <dd style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{analysisStatus.data.summary.exposureScore}/100</dd>
+                        <dt>Username Reuse Risk Score</dt>
+                        <dd style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{analysisStatus.data.summary.usernameReuseRiskScore}/100</dd>
                       </div>
                       <div className="kvRow">
                         <dt>Verified matches</dt>
