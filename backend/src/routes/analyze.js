@@ -6,6 +6,7 @@ const {
 const { similarityScore } = require('../utils/similarity')
 const { checkGitHubUsername } = require('../utils/github')
 const { checkEmailExposure } = require('../utils/breachProviders')
+const { generateRecommendations } = require('../utils/recommendations')
 
 const router = express.Router()
 
@@ -121,11 +122,14 @@ router.post('/', async (req, res) => {
     digitalExposureScore
   }
 
+  const recommendations = generateRecommendations(summary, emailExposure)
+
   return res.json({
     email: trimmedEmail,
     username: trimmedUsername,
     summary,
     emailExposure,
+    recommendations,
     results,
   })
 })

@@ -191,7 +191,7 @@ function App() {
                               )}
                               {analysisStatus.data.emailExposure.exposedFields?.length > 0 && (
                                 <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
-                                  Exposed data types: {analysisStatus.data.emailExposure.exposedFields.join(', ')}
+                                  Exposed data types: {analysisStatus.data.emailExposure.exposedFields.map(f => f.toLowerCase() === 'password' ? 'credentials' : f).join(', ')}
                                 </span>
                               )}
                             </div>
@@ -199,6 +199,23 @@ function App() {
                         </dd>
                       </div>
                     </dl>
+                  </div>
+                )}
+
+                {analysisStatus.data?.recommendations?.length > 0 && (
+                  <div className="recommendations" style={{ marginBottom: '1.5rem' }}>
+                    <h3 className="resultTitle">Recommendations</h3>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {analysisStatus.data.recommendations.map((rec, idx) => (
+                        <li key={idx} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <span className={`badge badge--${rec.severity}`} style={{ marginRight: '8px' }}>{rec.severity}</span>
+                            <strong style={{ fontSize: '1.05em' }}>{rec.title}</strong>
+                          </div>
+                          <p style={{ margin: 0, opacity: 0.8, fontSize: '0.95em', lineHeight: 1.4 }}>{rec.description}</p>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
