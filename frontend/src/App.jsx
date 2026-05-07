@@ -7,6 +7,7 @@ function App() {
   const [username, setUsername] = useState('')
   const [submitted, setSubmitted] = useState(null)
   const [analysisStatus, setAnalysisStatus] = useState({ state: 'idle' })
+  const [showAllSources, setShowAllSources] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -44,6 +45,7 @@ function App() {
 
     setSubmitted({ email: trimmedEmail, username: trimmedUsername })
     setAnalysisStatus({ state: 'loading' })
+    setShowAllSources(false)
 
     try {
       const res = await fetch('http://localhost:5053/api/analyze', {
@@ -186,7 +188,26 @@ function App() {
                               </span>
                               {analysisStatus.data.emailExposure.sources?.length > 0 && (
                                 <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
-                                  Sources: {analysisStatus.data.emailExposure.sources.map(s => `${s.name} (${s.date || 'unknown'})`).join(', ')}
+                                  Sources:{' '}
+                                  {(() => {
+                                    const sources = analysisStatus.data.emailExposure.sources;
+                                    const visibleSources = showAllSources ? sources : sources.slice(0, 5);
+                                    const hiddenCount = sources.length - 5;
+                                    return (
+                                      <>
+                                        {visibleSources.map(s => `${s.name} (${s.date || 'unknown'})`).join(', ')}
+                                        {hiddenCount > 0 && (
+                                          <button 
+                                            type="button"
+                                            onClick={() => setShowAllSources(!showAllSources)}
+                                            style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', padding: 0, marginLeft: '4px', textDecoration: 'underline', fontSize: 'inherit' }}
+                                          >
+                                            {showAllSources ? 'Show less' : `Show ${hiddenCount} more sources`}
+                                          </button>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
                                 </span>
                               )}
                               {analysisStatus.data.emailExposure.exposedFields?.length > 0 && (
