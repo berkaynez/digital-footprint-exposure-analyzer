@@ -139,8 +139,17 @@ function App() {
                     <h3 className="resultTitle">Exposure Summary</h3>
                     <dl className="kv" style={{ marginTop: '0.5rem' }}>
                       <div className="kvRow">
+                        <dt>Digital Exposure Score</dt>
+                        <dd style={{ fontWeight: 'bold', color: 'var(--color-primary)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <span>{analysisStatus.data.summary.digitalExposureScore}/100</span>
+                          <span style={{ fontSize: '0.8em', opacity: 0.6, fontWeight: 'normal', marginTop: '4px', textAlign: 'right' }}>
+                            Data sensitivity: {Math.round(analysisStatus.data.summary.dataSensitivityScore)}, Breach frequency: {Math.round(analysisStatus.data.summary.breachFrequencyScore)}, Username reuse: {Math.round(analysisStatus.data.summary.usernameReuseContribution)}
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="kvRow">
                         <dt>Username Reuse Risk Score</dt>
-                        <dd style={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>{analysisStatus.data.summary.usernameReuseRiskScore}/100</dd>
+                        <dd>{analysisStatus.data.summary.usernameReuseRiskScore}/100</dd>
                       </div>
                       <div className="kvRow">
                         <dt>Verified matches</dt>

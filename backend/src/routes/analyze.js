@@ -82,6 +82,31 @@ router.post('/', async (req, res) => {
   let usernameReuseRiskScore = (highRiskCount * 1) + (mediumRiskCount * 0.5) + (lowRiskCount * 0) + (verifiedMatchCount * 20) + (simulatedMatchCount * 0.25)
   usernameReuseRiskScore = Math.min(Math.round(usernameReuseRiskScore), 100)
 
+  const emailExposure = await checkEmailExposure(trimmedEmail)
+
+  let dataSensitivityScore = 0
+  if (emailExposure && emailExposure.exposedFields) {
+    const fields = emailExposure.exposedFields.map(f => f.toLowerCase())
+    if (fields.includes('password')) dataSensitivityScore += 25
+    if (fields.includes('email')) dataSensitivityScore += 10
+    if (fields.includes('ip')) dataSensitivityScore += 5
+    if (fields.includes('dob')) dataSensitivityScore += 10
+    if (fields.includes('address')) dataSensitivityScore += 10
+    if (fields.includes('first_name') || fields.includes('last_name')) dataSensitivityScore += 5
+  }
+  dataSensitivityScore = Math.min(dataSensitivityScore, 40)
+
+  let breachFrequencyScore = 0
+  if (emailExposure && emailExposure.breachCount) {
+    breachFrequencyScore = emailExposure.breachCount * 3
+  }
+  breachFrequencyScore = Math.min(breachFrequencyScore, 30)
+
+  let usernameReuseContribution = usernameReuseRiskScore * 0.3
+  
+  let digitalExposureScore = dataSensitivityScore + breachFrequencyScore + usernameReuseContribution
+  digitalExposureScore = Math.min(Math.round(digitalExposureScore), 100)
+
   const summary = {
     totalVariations: results.length,
     highRiskCount,
@@ -89,10 +114,12 @@ router.post('/', async (req, res) => {
     lowRiskCount,
     verifiedMatchCount,
     simulatedMatchCount,
-    usernameReuseRiskScore
+    usernameReuseRiskScore,
+    dataSensitivityScore,
+    breachFrequencyScore,
+    usernameReuseContribution,
+    digitalExposureScore
   }
-
-  const emailExposure = await checkEmailExposure(trimmedEmail)
 
   return res.json({
     email: trimmedEmail,
