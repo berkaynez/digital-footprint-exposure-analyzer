@@ -11,16 +11,27 @@ function createApp() {
 
   app.use(express.json())
 
-  const frontendOrigin = process.env.FRONTEND_ORIGIN
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    process.env.FRONTEND_ORIGIN,
+  ].filter(Boolean)
+
   app.use(
     cors({
-      origin: frontendOrigin ? [frontendOrigin] : true,
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true)
+        } else {
+          callback(new Error('Not allowed by CORS'))
+        }
+      },
       credentials: true,
     }),
   )
 
   app.get('/', (_req, res) => {
-    res.type('text').send('Digital Footprint Exposure Analyzer API')
+    res.json({ ok: true, service: "digital-footprint-api", message: "API is running" })
   })
 
   const apiLimiter = rateLimit({
@@ -30,11 +41,9 @@ function createApp() {
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   })
 
-  app.use('/api', apiLimiter)
-
   app.use('/api/health', healthRouter)
-  app.use('/api/username-variations', usernameVariationsRouter)
-  app.use('/api/analyze', analyzeRouter)
+  app.use('/api/username-variations', apiLimiter, usernameVariationsRouter)
+  app.use('/api/analyze', apiLimiter, analyzeRouter)
 
   return app
 }
