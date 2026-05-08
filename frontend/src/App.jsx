@@ -14,6 +14,13 @@ const getBannerInfo = (score) => {
   return { label: '⚠️ Immediate action recommended', cls: 'alertBanner--high' }
 }
 
+const getInsightText = (score) => {
+  if (score >= 80) return "This profile shows a critical digital exposure level. Email breach history combined with username reuse may increase account correlation and targeted attack risk.";
+  if (score >= 60) return "This profile shows a high digital exposure level. Review exposed accounts and reduce username reuse across platforms.";
+  if (score >= 30) return "This profile shows a moderate exposure level. Some public signals were detected, but immediate critical exposure is limited.";
+  return "This profile shows a low exposure level based on available public signals.";
+}
+
 function App() {
   const [apiStatus, setApiStatus] = useState({ state: 'idle' })
   const [email, setEmail] = useState('')
@@ -257,6 +264,16 @@ function App() {
                           </div>
                         </dl>
                       </div>
+                    </div>
+                    
+                    <div className="dashboardCard" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ marginRight: '8px', fontSize: '16px' }}>💡</span>
+                        <h4 className="sectionTitle" style={{ margin: 0, borderBottom: 'none', paddingBottom: 0 }}>Insight</h4>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.95em', lineHeight: 1.5, opacity: 0.85 }}>
+                        {getInsightText(analysisStatus.data.summary.digitalExposureScore)}
+                      </p>
                     </div>
                   </>
                 )}
