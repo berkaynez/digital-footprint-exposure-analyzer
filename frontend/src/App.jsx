@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
+const getRiskLevelBadge = (score) => {
+  if (score <= 30) return { label: 'Low', cls: 'badge--low' }
+  if (score <= 60) return { label: 'Medium', cls: 'badge--medium' }
+  if (score <= 80) return { label: 'High', cls: 'badge--high' }
+  return { label: 'Critical', cls: 'badge--critical' }
+}
+
+const getBannerInfo = (score) => {
+  if (score <= 30) return { label: '✅ Low risk footprint', cls: 'alertBanner--low' }
+  if (score <= 60) return { label: '⚠️ Moderate risk detected', cls: 'alertBanner--medium' }
+  return { label: '⚠️ Immediate action recommended', cls: 'alertBanner--high' }
+}
+
 function App() {
   const [apiStatus, setApiStatus] = useState({ state: 'idle' })
   const [email, setEmail] = useState('')
@@ -137,105 +150,134 @@ function App() {
 
               <div className="variations">
                 {analysisStatus.data?.summary && (
-                  <div className="summary" style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                    <h3 className="resultTitle">Exposure Summary</h3>
-                    <dl className="kv" style={{ marginTop: '0.5rem' }}>
-                      <div className="kvRow">
-                        <dt>Digital Exposure Score</dt>
-                        <dd style={{ fontWeight: 'bold', color: 'var(--color-primary)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          <span>{analysisStatus.data.summary.digitalExposureScore}/100</span>
-                          <span style={{ fontSize: '0.8em', opacity: 0.6, fontWeight: 'normal', marginTop: '4px', textAlign: 'right' }}>
-                            Data sensitivity: {Math.round(analysisStatus.data.summary.dataSensitivityScore)}, Breach frequency: {Math.round(analysisStatus.data.summary.breachFrequencyScore)}, Username reuse: {Math.round(analysisStatus.data.summary.usernameReuseContribution)}
-                          </span>
-                        </dd>
+                  <>
+                    {(() => {
+                      const banner = getBannerInfo(analysisStatus.data.summary.digitalExposureScore);
+                      return (
+                        <div className={`alertBanner ${banner.cls}`}>
+                          {banner.label}
+                        </div>
+                      )
+                    })()}
+                    <div className="dashboardGrid">
+                      <div className="dashboardCard">
+                        <h4 className="sectionTitle">Overall Risk</h4>
+                        {(() => {
+                          const riskBadge = getRiskLevelBadge(analysisStatus.data.summary.digitalExposureScore);
+                          const progressColor = riskBadge.label === 'Critical' || riskBadge.label === 'High' ? 'rgba(248, 113, 113, 0.8)' : riskBadge.label === 'Medium' ? 'rgba(251, 191, 36, 0.8)' : 'rgba(148, 163, 184, 0.8)';
+                          return (
+                            <>
+                              <div className="heroScoreContainer" style={{ marginBottom: '4px' }}>
+                                <span className="heroScoreText">{analysisStatus.data.summary.digitalExposureScore}</span>
+                                <span className={`badge ${riskBadge.cls}`}>{riskBadge.label}</span>
+                              </div>
+                              <div className="progressBarContainer">
+                                <div className="progressBarFill" style={{ width: `${analysisStatus.data.summary.digitalExposureScore}%`, background: progressColor }}></div>
+                              </div>
+                              <div style={{ fontSize: '0.85em', opacity: 0.7, marginTop: '12px', lineHeight: 1.5 }}>
+                                Data sensitivity: {Math.round(analysisStatus.data.summary.dataSensitivityScore)}<br/>
+                                Breach frequency: {Math.round(analysisStatus.data.summary.breachFrequencyScore)}<br/>
+                                Username reuse: {Math.round(analysisStatus.data.summary.usernameReuseContribution)}
+                              </div>
+                            </>
+                          )
+                        })()}
                       </div>
-                      <div className="kvRow">
-                        <dt>Username Reuse Risk Score</dt>
-                        <dd>{analysisStatus.data.summary.usernameReuseRiskScore}/100</dd>
+
+                      <div className="dashboardCard">
+                        <h4 className="sectionTitle">Email Exposure</h4>
+                        <dl className="kv">
+                          <div className="kvRow" style={{ gridTemplateColumns: '1fr', padding: 0 }}>
+                            <dd>
+                              {analysisStatus.data.emailExposure ? (
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span style={{ marginBottom: '6px' }}>
+                                    {analysisStatus.data.emailExposure.error ? (
+                                      'Check unavailable'
+                                    ) : analysisStatus.data.emailExposure.found ? (
+                                      <span style={{ color: 'var(--color-error)' }}>{analysisStatus.data.emailExposure.breachCount} possible breaches found</span>
+                                    ) : (
+                                      <span style={{ color: 'var(--color-success)' }}>No public breach exposure found</span>
+                                    )}
+                                  </span>
+                                  {analysisStatus.data.emailExposure.sources?.length > 0 && (
+                                    <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
+                                      Sources:{' '}
+                                      {(() => {
+                                        const sources = analysisStatus.data.emailExposure.sources;
+                                        const visibleSources = showAllSources ? sources : sources.slice(0, 5);
+                                        const hiddenCount = sources.length - 5;
+                                        return (
+                                          <>
+                                            {visibleSources.map(s => `${s.name} (${s.date || 'unknown'})`).join(', ')}
+                                            {hiddenCount > 0 && (
+                                              <button 
+                                                type="button"
+                                                onClick={() => setShowAllSources(!showAllSources)}
+                                                style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', padding: 0, marginLeft: '4px', textDecoration: 'underline', fontSize: 'inherit' }}
+                                              >
+                                                {showAllSources ? 'Show less' : `Show ${hiddenCount} more`}
+                                              </button>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
+                                    </span>
+                                  )}
+                                  {analysisStatus.data.emailExposure.exposedFields?.length > 0 && (
+                                    <span style={{ fontSize: '0.9em', marginTop: '6px' }}>
+                                      Exposed data: {analysisStatus.data.emailExposure.exposedFields.map(f => f.toLowerCase() === 'password' ? 'credentials' : f).join(', ')}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : 'Pending...'}
+                            </dd>
+                          </div>
+                        </dl>
                       </div>
-                      <div className="kvRow">
-                        <dt>Verified matches</dt>
-                        <dd>{analysisStatus.data.summary.verifiedMatchCount}</dd>
+
+                      <div className="dashboardCard">
+                        <h4 className="sectionTitle">Username Intelligence</h4>
+                        <dl className="kv">
+                          <div className="kvRow">
+                            <dt>Reuse Risk</dt>
+                            <dd>{analysisStatus.data.summary.usernameReuseRiskScore}/100</dd>
+                          </div>
+                          <div className="kvRow">
+                            <dt>Matches</dt>
+                            <dd>{analysisStatus.data.summary.verifiedMatchCount} Ver., {analysisStatus.data.summary.simulatedMatchCount} Sim.</dd>
+                          </div>
+                          <div className="kvRow">
+                            <dt>Variations</dt>
+                            <dd style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              <span className="badge badge--high">{analysisStatus.data.summary.highRiskCount} H</span>
+                              <span className="badge badge--medium">{analysisStatus.data.summary.mediumRiskCount} M</span>
+                              <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} L</span>
+                            </dd>
+                          </div>
+                        </dl>
                       </div>
-                      <div className="kvRow">
-                        <dt>Simulated matches</dt>
-                        <dd>{analysisStatus.data.summary.simulatedMatchCount}</dd>
-                      </div>
-                      <div className="kvRow">
-                        <dt>Risk variations</dt>
-                        <dd>
-                          <span className="badge badge--high" style={{marginRight: '4px'}}>{analysisStatus.data.summary.highRiskCount} High</span>
-                          <span className="badge badge--medium" style={{marginRight: '4px'}}>{analysisStatus.data.summary.mediumRiskCount} Medium</span>
-                          <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} Low</span>
-                        </dd>
-                      </div>
-                      <div className="kvRow">
-                        <dt>Email Exposure Check</dt>
-                        <dd>
-                          {analysisStatus.data.emailExposure ? (
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span>
-                                {analysisStatus.data.emailExposure.error ? (
-                                  'Email exposure check unavailable'
-                                ) : analysisStatus.data.emailExposure.found ? (
-                                  <span style={{ color: 'var(--color-error)' }}>{analysisStatus.data.emailExposure.breachCount} possible breaches found</span>
-                                ) : (
-                                  <span style={{ color: 'var(--color-success)' }}>No public breach exposure found</span>
-                                )}
-                              </span>
-                              <span style={{ fontSize: '0.8em', opacity: 0.6 }}>
-                                Provider: {analysisStatus.data.emailExposure.provider}
-                              </span>
-                              {analysisStatus.data.emailExposure.sources?.length > 0 && (
-                                <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
-                                  Sources:{' '}
-                                  {(() => {
-                                    const sources = analysisStatus.data.emailExposure.sources;
-                                    const visibleSources = showAllSources ? sources : sources.slice(0, 5);
-                                    const hiddenCount = sources.length - 5;
-                                    return (
-                                      <>
-                                        {visibleSources.map(s => `${s.name} (${s.date || 'unknown'})`).join(', ')}
-                                        {hiddenCount > 0 && (
-                                          <button 
-                                            type="button"
-                                            onClick={() => setShowAllSources(!showAllSources)}
-                                            style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', padding: 0, marginLeft: '4px', textDecoration: 'underline', fontSize: 'inherit' }}
-                                          >
-                                            {showAllSources ? 'Show less' : `Show ${hiddenCount} more sources`}
-                                          </button>
-                                        )}
-                                      </>
-                                    );
-                                  })()}
-                                </span>
-                              )}
-                              {analysisStatus.data.emailExposure.exposedFields?.length > 0 && (
-                                <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
-                                  Exposed data types: {analysisStatus.data.emailExposure.exposedFields.map(f => f.toLowerCase() === 'password' ? 'credentials' : f).join(', ')}
-                                </span>
-                              )}
-                            </div>
-                          ) : 'Pending...'}
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
+                    </div>
+                  </>
                 )}
 
                 {analysisStatus.data?.recommendations?.length > 0 && (
                   <div className="recommendations" style={{ marginBottom: '1.5rem' }}>
                     <h3 className="resultTitle">Recommendations</h3>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {analysisStatus.data.recommendations.map((rec, idx) => (
-                        <li key={idx} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <span className={`badge badge--${rec.severity}`} style={{ marginRight: '8px' }}>{rec.severity}</span>
-                            <strong style={{ fontSize: '1.05em' }}>{rec.title}</strong>
-                          </div>
-                          <p style={{ margin: 0, opacity: 0.8, fontSize: '0.95em', lineHeight: 1.4 }}>{rec.description}</p>
-                        </li>
-                      ))}
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {analysisStatus.data.recommendations.map((rec, idx) => {
+                        const actionText = rec.severity === 'high' ? 'Fix Now' : rec.severity === 'medium' ? 'Improve Security' : 'Optional';
+                        const shortDescription = rec.description.split('.')[0] + '.';
+                        return (
+                          <li key={idx} style={{ padding: '0.75rem', borderLeft: `3px solid var(--color-${rec.severity === 'high' ? 'error' : rec.severity === 'medium' ? 'warning' : 'primary'})`, background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+                              <span className={`actionLabel actionLabel--${rec.severity}`}>{actionText}</span>
+                              <strong style={{ fontSize: '0.95em' }}>{rec.title}</strong>
+                            </div>
+                            <p style={{ margin: 0, opacity: 0.75, fontSize: '0.85em', lineHeight: 1.4 }}>{shortDescription}</p>
+                          </li>
+                        )
+                      })}
                     </ul>
                   </div>
                 )}
@@ -268,35 +310,26 @@ function App() {
                             })
 
                           return (
-                            <li key={r.username} className="resultItem">
-                              <div className="resultRow">
-                                <code className="inlineCode">{r.username}</code>
-                                <span className="percent">
+                            <li key={r.username} className="compactResultItem">
+                              <div className="resultRow" style={{ gap: '8px' }}>
+                                <code className="inlineCode" style={{ fontSize: '12px' }}>{r.username}</code>
+                                <span className="percent" style={{ fontSize: '12px' }}>
                                   {toPercent(r.similarity)}
                                 </span>
-                                <span className={`badge badge--${r.risk}`}>
+                                <span className={`badge badge--${r.risk}`} style={{ padding: '2px 6px', fontSize: '10px' }}>
                                   {r.risk}
                                 </span>
                               </div>
 
-                              <div className="platformMatches">
+                              <div className="platformMatches" style={{ marginTop: '4px', fontSize: '12px' }}>
                                 {matchedPlatforms.length ? (
                                   <>
-                                    <span className="platformLabel">
-                                      Possible matches:
-                                    </span>{' '}
-                                    {matchedPlatforms.join(', ')}
+                                    <span className="platformLabel">Matches:</span> {matchedPlatforms.join(', ')}
                                   </>
                                 ) : (
-                                  'No possible platform matches'
+                                  'No matches'
                                 )}
                               </div>
-
-                              {githubUnavailable && (
-                                <div className="platformNote">
-                                  GitHub check unavailable
-                                </div>
-                              )}
                             </li>
                           )
                         })}
