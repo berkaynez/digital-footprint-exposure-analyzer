@@ -40,6 +40,18 @@ router.post('/', async (req, res) => {
   const trimmedEmail = email.trim()
   const trimmedUsername = username.trim()
 
+  if (!trimmedEmail || !trimmedEmail.includes('@')) {
+    return res.status(400).json({
+      error: 'A valid email containing @ is required',
+    })
+  }
+
+  if (!trimmedUsername || trimmedUsername.length < 3) {
+    return res.status(400).json({
+      error: 'Username must be at least 3 characters long',
+    })
+  }
+
   const variations = generateUsernameVariations(trimmedUsername)
 
   const results = await Promise.all(
