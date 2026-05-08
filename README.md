@@ -1,36 +1,41 @@
-# digital-footprint-exposure-analyzer
-A web-based platform for analyzing digital footprint exposure, account matching, and breach-related risk.
+# Digital Footprint Exposure Analyzer
 
-## Project structure
+A web application that assesses a user's digital exposure risk based on their email and username. It aggregates public data signals, breach history, and username reuse patterns to generate an overall exposure score and actionable security recommendations.
 
-```
-backend/   # Node.js + Express API (MongoDB wiring next)
-frontend/  # React (Vite) web app
-```
+## Links
 
-## Local development
+- Live Demo: https://digital-footprint-exposure-analyzer.vercel.app/
+- Backend API: https://digital-footprint-api-mkl5.onrender.com/
 
-### Prerequisites
+## Tech Stack
 
-- Node.js: **20.19+** or **22.12+** (Vite requires this)
+- React (Vite)
+- Node.js (Express)
+- Deployment: Vercel + Render
 
-1) Install dependencies (root workspace install):
+## Features
 
-```bash
-npm install
-```
+- Digital exposure scoring
+- Username reuse detection
+- Email breach analysis
+- Risk-based recommendations
 
-2) Start both servers:
+## Local Development
 
-```bash
-npm run dev
-```
+1. Install dependencies for both the frontend and backend:
+   ```bash
+   cd frontend && npm install
+   cd ../backend && npm install
+   ```
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:5053` (change via `backend/.env`)
+2. Start the backend server:
+   ```bash
+   cd backend
+   npm run dev
+   ```
 
-## Basic API connection
-
-- The backend exposes `GET /api/health`
-- The frontend calls `/api/health` on load
-- Vite proxies `/api/*` → the backend in `frontend/vite.config.js`
+3. Start the frontend development server:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
