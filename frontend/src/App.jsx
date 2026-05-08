@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5053'
+
 const getRiskLevelBadge = (score) => {
   if (score <= 30) return { label: 'Low', cls: 'badge--low' }
   if (score <= 60) return { label: 'Medium', cls: 'badge--medium' }
@@ -36,7 +38,7 @@ function App() {
       setApiStatus({ state: 'loading' })
 
       try {
-        const res = await fetch('/api/health')
+        const res = await fetch(`${API_BASE_URL}/api/health`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json = await res.json()
         if (cancelled) return
@@ -68,7 +70,7 @@ function App() {
     setShowAllSources(false)
 
     try {
-      const res = await fetch('http://localhost:5053/api/analyze', {
+      const res = await fetch(`${API_BASE_URL}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: trimmedEmail, username: trimmedUsername }),
