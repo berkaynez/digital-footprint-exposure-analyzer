@@ -1,15 +1,32 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --text: #4b5563;
+  --text-h: #111827;
+  --bg: #f9fafb;
+  --border: #e5e7eb;
+  --code-bg: #f3f4f6;
+  --accent: #6366f1;
+  --accent-bg: #4f46e5;
+  --accent-border: #4f46e5;
+  --accent-text: #ffffff;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --input-bg: #ffffff;
+  --badge-bg: #f3f4f6;
+  --hero-gradient: linear-gradient(180deg, #f3f4f6 0%, #ffffff 100%);
+  --shadow: rgba(0, 0, 0, 0.05) 0 4px 6px -1px;
+
+  /* Alert Colors - Light Mode */
+  --alert-high-bg: rgba(239, 68, 68, 0.1);
+  --alert-high-border: rgba(239, 68, 68, 0.3);
+  --alert-high-text: #b91c1c;
+
+  --alert-med-bg: rgba(245, 158, 11, 0.1);
+  --alert-med-border: rgba(245, 158, 11, 0.3);
+  --alert-med-text: #b45309;
+
+  --alert-low-bg: rgba(107, 114, 128, 0.1);
+  --alert-low-border: rgba(107, 114, 128, 0.3);
+  --alert-low-text: #374151;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -30,24 +47,35 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+[data-theme='dark'] {
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --bg: #111827;
+  --border: #374151;
+  --code-bg: #1f2937;
+  --accent: #818cf8;
+  --accent-bg: #4f46e5;
+  --accent-border: #6366f1;
+  --accent-text: #ffffff;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(0, 0, 0, 0.25);
+  --badge-bg: rgba(255, 255, 255, 0.06);
+  --hero-gradient: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+  --shadow: rgba(0, 0, 0, 0.2) 0 8px 32px;
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+  /* Alert Colors - Dark Mode */
+  --alert-high-bg: rgba(248, 113, 113, 0.15);
+  --alert-high-border: rgba(248, 113, 113, 0.4);
+  --alert-high-text: #ffb4b4;
+
+  --alert-med-bg: rgba(251, 191, 36, 0.15);
+  --alert-med-border: rgba(251, 191, 36, 0.4);
+  --alert-med-text: #fde68a;
+
+  --alert-low-bg: rgba(148, 163, 184, 0.15);
+  --alert-low-border: rgba(148, 163, 184, 0.4);
+  --alert-low-text: #e2e8f0;
 }
 
 body {
@@ -55,15 +83,10 @@ body {
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
 }
 
 h1,
