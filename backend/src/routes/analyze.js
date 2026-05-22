@@ -148,15 +148,31 @@ router.post('/', async (req, res) => {
   let simulatedMatchCount = originalSimulatedMatchCount
   let publicSignalMatchCount = originalPublicSignalMatchCount
 
-  let weightedRisk = (originalVerifiedMatchCount * 20 * 1.0) + (originalSimulatedMatchCount * 0.25 * 1.0) + (originalPublicSignalMatchCount * 0.25 * 1.0)
+  // raw platform matches are displayed for transparency
+  // weighted scoring reduces false confidence from weak/simulated signals
+  let weightedRisk = (originalVerifiedMatchCount * 15 * 1.0) + 
+                     (originalPublicSignalMatchCount * 15 * 0.4) + 
+                     (originalSimulatedMatchCount * 15 * 0.15)
 
   results.forEach(r => {
+    let effectiveVariationWeight = r.confidenceWeight;
+
+    // shortened/truncated candidates: max contribution should be capped at 0.25 even if verified providers match
+    if (r.username.length < trimmedUsername.length && effectiveVariationWeight > 0.25) {
+      effectiveVariationWeight = 0.25;
+    }
+
+    // if candidate username length <= 5 and candidate is shorter than original username: cap its scoring contribution to 20% of normal
+    if (r.username.length <= 5 && r.username.length < trimmedUsername.length) {
+      effectiveVariationWeight *= 0.2;
+    }
+
     if (r.risk === 'high') {
       highRiskCount++
-      weightedRisk += (1 * r.confidenceWeight)
+      weightedRisk += (1 * effectiveVariationWeight)
     } else if (r.risk === 'medium') {
       mediumRiskCount++
-      weightedRisk += (0.5 * r.confidenceWeight)
+      weightedRisk += (0.5 * effectiveVariationWeight)
     } else if (r.risk === 'low') {
       lowRiskCount++
     }
@@ -165,19 +181,23 @@ router.post('/', async (req, res) => {
       if (p.found) {
         if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') {
           verifiedMatchCount++
-          weightedRisk += (20 * r.confidenceWeight)
+          weightedRisk += (5 * 1.0 * effectiveVariationWeight)
         } else if (p.signalType === 'public_signal') {
           publicSignalMatchCount++
-          weightedRisk += (0.25 * r.confidenceWeight)
+          weightedRisk += (5 * 0.4 * effectiveVariationWeight)
         } else {
           simulatedMatchCount++
-          weightedRisk += (0.25 * r.confidenceWeight)
+          weightedRisk += (5 * 0.15 * effectiveVariationWeight)
         }
       }
     })
   })
 
-  let usernameReuseRiskScore = Math.min(Math.round(weightedRisk), 100)
+  // The displayed match counts are raw transparency metrics; the score uses weighted risk to avoid over-counting weak or generic matches.
+  let usernameReuseRiskScore = Math.min(
+    100,
+    Math.round(weightedRisk * 1.2)
+  )
 
   const emailExposure = await checkEmailExposure(trimmedEmail)
 
