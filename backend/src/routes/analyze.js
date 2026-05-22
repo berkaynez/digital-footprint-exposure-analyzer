@@ -8,6 +8,7 @@ const { checkGitHubUsername } = require('../utils/github')
 const { checkGitLabUsername } = require('../utils/platformProviders/gitlab')
 const { checkRedditUsername } = require('../utils/platformProviders/reddit')
 const { checkYouTubeHandle } = require('../utils/platformProviders/youtube')
+const { checkTelegramUsername } = require('../utils/platformProviders/telegram')
 const { checkEmailExposure } = require('../utils/breachProviders')
 const { generateRecommendations } = require('../utils/recommendations')
 
@@ -76,20 +77,24 @@ router.post('/', async (req, res) => {
   const originalGitlab = await checkGitLabUsername(trimmedUsername)
   const originalReddit = await checkRedditUsername(trimmedUsername)
   const originalYouTube = await checkYouTubeHandle(trimmedUsername)
+  const originalTelegram = await checkTelegramUsername(trimmedUsername)
   const originalPlatforms = [
     { name: 'GitHub', ...originalGithub },
     originalGitlab,
     originalReddit,
     originalYouTube,
+    originalTelegram,
     ...mockPlatformsForUsername(trimmedUsername, 1.0)
   ]
 
   let originalVerifiedMatchCount = 0
   let originalSimulatedMatchCount = 0
+  let originalPublicSignalMatchCount = 0
 
   originalPlatforms.forEach(p => {
     if (p.found) {
       if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') originalVerifiedMatchCount++
+      else if (p.signalType === 'public_signal') originalPublicSignalMatchCount++
       else originalSimulatedMatchCount++
     }
   })
@@ -98,6 +103,7 @@ router.post('/', async (req, res) => {
     username: trimmedUsername,
     platforms: originalPlatforms,
     verifiedMatchCount: originalVerifiedMatchCount,
+    publicSignalMatchCount: originalPublicSignalMatchCount,
     simulatedMatchCount: originalSimulatedMatchCount,
     confidenceWeight: 1.0
   }
@@ -110,6 +116,7 @@ router.post('/', async (req, res) => {
       const gitlab = await checkGitLabUsername(variation)
       const reddit = await checkRedditUsername(variation)
       const youtube = await checkYouTubeHandle(variation)
+      const telegram = await checkTelegramUsername(variation)
       
       const platforms = [
         // Verified API-based checks
@@ -117,6 +124,7 @@ router.post('/', async (req, res) => {
         gitlab,
         reddit,
         youtube,
+        telegram,
         // Simulated prototype indicators
         ...mockPlatformsForUsername(variation, score),
       ]
@@ -138,8 +146,9 @@ router.post('/', async (req, res) => {
   let lowRiskCount = 0
   let verifiedMatchCount = originalVerifiedMatchCount
   let simulatedMatchCount = originalSimulatedMatchCount
+  let publicSignalMatchCount = originalPublicSignalMatchCount
 
-  let weightedRisk = (originalVerifiedMatchCount * 20 * 1.0) + (originalSimulatedMatchCount * 0.25 * 1.0)
+  let weightedRisk = (originalVerifiedMatchCount * 20 * 1.0) + (originalSimulatedMatchCount * 0.25 * 1.0) + (originalPublicSignalMatchCount * 0.25 * 1.0)
 
   results.forEach(r => {
     if (r.risk === 'high') {
@@ -157,6 +166,9 @@ router.post('/', async (req, res) => {
         if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') {
           verifiedMatchCount++
           weightedRisk += (20 * r.confidenceWeight)
+        } else if (p.signalType === 'public_signal') {
+          publicSignalMatchCount++
+          weightedRisk += (0.25 * r.confidenceWeight)
         } else {
           simulatedMatchCount++
           weightedRisk += (0.25 * r.confidenceWeight)
@@ -198,6 +210,7 @@ router.post('/', async (req, res) => {
     mediumRiskCount,
     lowRiskCount,
     verifiedMatchCount,
+    publicSignalMatchCount,
     simulatedMatchCount,
     usernameReuseRiskScore,
     dataSensitivityScore,

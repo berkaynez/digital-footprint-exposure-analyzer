@@ -424,6 +424,7 @@ function App() {
                       const matchedPlatforms = platforms
                         .filter((p) => p.found === true && !p.error)
                         .map((p) => {
+                          if (p.signalType === 'public_signal') return `${p.name} (public signal)`;
                           if (p.verified) return `${p.name} (verified)`;
                           return `${p.name} (simulated)`;
                         });
@@ -465,6 +466,7 @@ function App() {
                               const matchedPlatforms = platforms
                                 .filter((p) => p.found === true && !p.error)
                                 .map((p) => {
+                                  if (p.signalType === 'public_signal') return `${p.name} (public signal)`
                                   if (p.verified) return `${p.name} (verified)`
                                   return `${p.name} (simulated)`
                                 })
