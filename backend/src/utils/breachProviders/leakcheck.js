@@ -22,8 +22,21 @@ async function checkLeakCheck(identifier) {
         confidence: "external_public_provider",
         error: false
       }
+    } else if (data.success === false && data.error === "Not found") {
+      // No breach evidence found: the API successfully checked and returned 0 results.
+      return {
+        provider: "LeakCheck Public API",
+        checked: true,
+        configured: true,
+        found: false,
+        breachCount: 0,
+        sources: [],
+        exposedFields: [],
+        confidence: "external_public_provider",
+        error: false
+      }
     } else {
-      // Per instructions, if success is false, we return error: true
+      // Breach check unavailable: the API failed, was rate limited, or returned an unexpected error.
       return {
         provider: "LeakCheck Public API",
         checked: true,

@@ -115,7 +115,7 @@ function App() {
       const emailExp = data.emailExposure;
 
       const riskBadge = getRiskLevelBadge(summary.digitalExposureScore);
-      const emailExpText = emailExp?.error ? 'Check unavailable' : emailExp?.found ? `${emailExp.breachCount} possible breaches found` : 'No public breach exposure found';
+      const emailExpText = emailExp?.error ? 'Check unavailable' : emailExp?.found ? `${emailExp.breachCount} breaches found` : '0 breaches found';
       
       const originalPlatforms = (originalAnalysis?.platforms || [])
         .filter((p) => p.found === true && !p.error)
@@ -359,9 +359,9 @@ Original Username Matches: ${originalMatchesText}`;
                                     {analysisStatus.data.emailExposure.error ? (
                                       'Check unavailable'
                                     ) : analysisStatus.data.emailExposure.found ? (
-                                      <span style={{ color: 'var(--color-error)' }}>{analysisStatus.data.emailExposure.breachCount} possible breaches found</span>
+                                      <span style={{ color: 'var(--color-error)' }}>{analysisStatus.data.emailExposure.breachCount} breaches found</span>
                                     ) : (
-                                      <span style={{ color: 'var(--color-success)' }}>No public breach exposure found</span>
+                                      <span style={{ color: 'var(--color-success)' }}>0 breaches found</span>
                                     )}
                                   </span>
                                   {analysisStatus.data.emailExposure.sources?.length > 0 && (
