@@ -415,9 +415,42 @@ function App() {
                   </div>
                 )}
 
+                {analysisStatus.state === 'success' && analysisStatus.data?.originalUsernameAnalysis && (
+                  <div className="dashboardCard" style={{ marginBottom: '1.5rem' }}>
+                    <h4 className="sectionTitle" style={{ borderBottom: 'none', marginBottom: '12px' }}>Original Username</h4>
+                    {(() => {
+                      const analysis = analysisStatus.data.originalUsernameAnalysis;
+                      const platforms = Array.isArray(analysis.platforms) ? analysis.platforms.filter((p) => p && typeof p.name === 'string') : [];
+                      const matchedPlatforms = platforms
+                        .filter((p) => p.found === true && !p.error)
+                        .map((p) => {
+                          if (p.verified) return `${p.name} (verified)`;
+                          return `${p.name} (simulated)`;
+                        });
+                      
+                      return (
+                        <div className="compactResultItem" style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                          <div className="resultRow" style={{ gap: '8px' }}>
+                            <code className="inlineCode" style={{ fontSize: '14px', fontWeight: 'bold' }}>{analysis.username}</code>
+                          </div>
+                          <div className="platformMatches" style={{ marginTop: '8px', fontSize: '13px' }}>
+                            {matchedPlatforms.length ? (
+                              <>
+                                <span className="platformLabel">Matches:</span> <span style={{ color: 'var(--color-primary)', fontWeight: 500 }}>{matchedPlatforms.join(', ')}</span>
+                              </>
+                            ) : (
+                              <span style={{ opacity: 0.7 }}>No platform matches found for the original username.</span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+
                 {analysisStatus.state === 'success' && (
                   <details className="variationsDetails">
-                    <summary>Detailed Username Variations</summary>
+                    <summary>Similar Username Variations</summary>
                     <div className="detailsContent">
                       <>
                         {analysisStatus.data?.results?.length ? (
@@ -430,9 +463,9 @@ function App() {
                                 : []
 
                               const matchedPlatforms = platforms
-                                .filter((p) => p.found === true)
+                                .filter((p) => p.found === true && !p.error)
                                 .map((p) => {
-                                  if (p.name === 'GitHub') return 'GitHub (verified)'
+                                  if (p.verified) return `${p.name} (verified)`
                                   return `${p.name} (simulated)`
                                 })
 

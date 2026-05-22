@@ -5,6 +5,9 @@ const {
 } = require('../utils/usernameGenerator')
 const { similarityScore } = require('../utils/similarity')
 const { checkGitHubUsername } = require('../utils/github')
+const { checkGitLabUsername } = require('../utils/platformProviders/gitlab')
+const { checkRedditUsername } = require('../utils/platformProviders/reddit')
+const { checkYouTubeHandle } = require('../utils/platformProviders/youtube')
 const { checkEmailExposure } = require('../utils/breachProviders')
 const { generateRecommendations } = require('../utils/recommendations')
 
@@ -16,12 +19,26 @@ function riskFromScore(score) {
   return 'low'
 }
 
+// Similarity is raw string similarity.
+// confidenceWeight controls how strongly a generated variation contributes to risk scoring.
+function getConfidenceWeight(original, variation) {
+  const origLower = original.toLowerCase()
+  const varLower = variation.toLowerCase()
+  
+  if (varLower === origLower) return 1.0
+  if (varLower.length < origLower.length) return 0.35 // shortened
+  if (/[34105]/.test(varLower) && !/[34105]/.test(origLower)) return 0.8 // leetspeak
+  if (varLower.includes('_') || varLower.includes('-') || varLower.includes('.')) return 0.75 // separator
+  if (/\d+$/.test(varLower) && !/\d+$/.test(origLower)) return 0.65 // number suffix
+  
+  return 0.6 // fallback
+}
+
 function mockPlatformsForUsername(username, similarity) {
   const possibleInstagram = username.includes('_')
   const possibleMedium = username.length > 10
 
   return [
-    { name: 'Reddit', found: similarity >= 0.8 },
     { name: 'Medium', found: possibleMedium },
     { name: 'Pinterest', found: false },
     { name: 'Instagram', found: possibleInstagram },
@@ -52,22 +69,65 @@ router.post('/', async (req, res) => {
     })
   }
 
-  const variations = generateUsernameVariations(trimmedUsername)
+  let variations = generateUsernameVariations(trimmedUsername)
+  variations = variations.filter(v => v.toLowerCase() !== trimmedUsername.toLowerCase())
+
+  const originalGithub = await checkGitHubUsername(trimmedUsername)
+  const originalGitlab = await checkGitLabUsername(trimmedUsername)
+  const originalReddit = await checkRedditUsername(trimmedUsername)
+  const originalYouTube = await checkYouTubeHandle(trimmedUsername)
+  const originalPlatforms = [
+    { name: 'GitHub', ...originalGithub },
+    originalGitlab,
+    originalReddit,
+    originalYouTube,
+    ...mockPlatformsForUsername(trimmedUsername, 1.0)
+  ]
+
+  let originalVerifiedMatchCount = 0
+  let originalSimulatedMatchCount = 0
+
+  originalPlatforms.forEach(p => {
+    if (p.found) {
+      if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') originalVerifiedMatchCount++
+      else originalSimulatedMatchCount++
+    }
+  })
+
+  const originalUsernameAnalysis = {
+    username: trimmedUsername,
+    platforms: originalPlatforms,
+    verifiedMatchCount: originalVerifiedMatchCount,
+    simulatedMatchCount: originalSimulatedMatchCount,
+    confidenceWeight: 1.0
+  }
 
   const results = await Promise.all(
     variations.map(async (variation) => {
       const score = similarityScore(trimmedUsername, variation)
 
       const github = await checkGitHubUsername(variation)
+      const gitlab = await checkGitLabUsername(variation)
+      const reddit = await checkRedditUsername(variation)
+      const youtube = await checkYouTubeHandle(variation)
+      
       const platforms = [
+        // Verified API-based checks
         { name: 'GitHub', ...github },
+        gitlab,
+        reddit,
+        youtube,
+        // Simulated prototype indicators
         ...mockPlatformsForUsername(variation, score),
       ]
+
+      const confidenceWeight = getConfidenceWeight(trimmedUsername, variation)
 
       return {
         username: variation,
         similarity: score,
         risk: riskFromScore(score),
+        confidenceWeight,
         platforms,
       }
     }),
@@ -76,24 +136,36 @@ router.post('/', async (req, res) => {
   let highRiskCount = 0
   let mediumRiskCount = 0
   let lowRiskCount = 0
-  let verifiedMatchCount = 0
-  let simulatedMatchCount = 0
+  let verifiedMatchCount = originalVerifiedMatchCount
+  let simulatedMatchCount = originalSimulatedMatchCount
+
+  let weightedRisk = (originalVerifiedMatchCount * 20 * 1.0) + (originalSimulatedMatchCount * 0.25 * 1.0)
 
   results.forEach(r => {
-    if (r.risk === 'high') highRiskCount++
-    else if (r.risk === 'medium') mediumRiskCount++
-    else if (r.risk === 'low') lowRiskCount++
+    if (r.risk === 'high') {
+      highRiskCount++
+      weightedRisk += (1 * r.confidenceWeight)
+    } else if (r.risk === 'medium') {
+      mediumRiskCount++
+      weightedRisk += (0.5 * r.confidenceWeight)
+    } else if (r.risk === 'low') {
+      lowRiskCount++
+    }
 
     r.platforms.forEach(p => {
       if (p.found) {
-        if (p.name === 'GitHub') verifiedMatchCount++
-        else simulatedMatchCount++
+        if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') {
+          verifiedMatchCount++
+          weightedRisk += (20 * r.confidenceWeight)
+        } else {
+          simulatedMatchCount++
+          weightedRisk += (0.25 * r.confidenceWeight)
+        }
       }
     })
   })
 
-  let usernameReuseRiskScore = (highRiskCount * 1) + (mediumRiskCount * 0.5) + (lowRiskCount * 0) + (verifiedMatchCount * 20) + (simulatedMatchCount * 0.25)
-  usernameReuseRiskScore = Math.min(Math.round(usernameReuseRiskScore), 100)
+  let usernameReuseRiskScore = Math.min(Math.round(weightedRisk), 100)
 
   const emailExposure = await checkEmailExposure(trimmedEmail)
 
@@ -142,6 +214,7 @@ router.post('/', async (req, res) => {
     summary,
     emailExposure,
     recommendations,
+    originalUsernameAnalysis,
     results,
   })
 })
