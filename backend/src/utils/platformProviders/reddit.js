@@ -26,7 +26,9 @@ async function checkRedditUsername(username) {
       return { name: "Reddit", found: false, verified: false, error: true, reason: "request_failed" };
     }
   } catch (error) {
-    console.error(`Reddit API error for username ${username}:`, error.message);
+    if (process.env.DEBUG_PROVIDERS === "true") {
+      console.error(`Reddit API error:`, error.message);
+    }
     return { name: "Reddit", found: false, verified: false, error: true, reason: "request_failed" };
   }
 }

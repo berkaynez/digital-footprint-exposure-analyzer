@@ -39,7 +39,9 @@ async function checkYouTubeHandle(username) {
       return { name: "YouTube", found: false, verified: false, error: true, reason: "request_failed" };
     }
   } catch (error) {
-    console.error(`YouTube API error for handle ${cleanUsername}:`, error.message);
+    if (process.env.DEBUG_PROVIDERS === "true") {
+      console.error(`YouTube API error:`, error.message);
+    }
     return { name: "YouTube", found: false, verified: false, error: true, reason: "request_failed" };
   }
 }

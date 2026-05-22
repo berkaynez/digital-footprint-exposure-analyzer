@@ -33,7 +33,9 @@ async function checkGitLabUsername(username) {
       return { name: "GitLab", found: false, verified: false, error: true, reason: "request_failed" };
     }
   } catch (error) {
-    console.error(`GitLab API error for username ${username}:`, error.message);
+    if (process.env.DEBUG_PROVIDERS === "true") {
+      console.error(`GitLab API error:`, error.message);
+    }
     return { name: "GitLab", found: false, verified: false, error: true, reason: "request_failed" };
   }
 }

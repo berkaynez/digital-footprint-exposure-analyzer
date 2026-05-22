@@ -29,15 +29,19 @@ async function checkGitHubUsername(username) {
     })
 
     const remaining = res.headers.get('x-ratelimit-remaining')
-    // eslint-disable-next-line no-console
-    console.log(`GitHub API status: ${res.status}, x-ratelimit-remaining: ${remaining}`)
+    if (process.env.DEBUG_PROVIDERS === "true") {
+      // eslint-disable-next-line no-console
+      console.log(`GitHub API status: ${res.status}, x-ratelimit-remaining: ${remaining}`)
+    }
 
     if (res.status === 200) return { found: true, verified: true }
     if (res.status === 404) return { found: false, verified: true }
     if (res.status === 403) return { found: false, verified: false, error: true, reason: 'rate_limited_or_forbidden' }
 
-    // eslint-disable-next-line no-console
-    console.log('GitHub check failed', u, res.status)
+    if (process.env.DEBUG_PROVIDERS === "true") {
+      // eslint-disable-next-line no-console
+      console.log(`GitHub check failed, status: ${res.status}`)
+    }
     return { found: false, verified: false, error: true }
   } catch (_err) {
     return { found: false, verified: false, error: true }

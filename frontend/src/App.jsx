@@ -29,6 +29,7 @@ function App() {
   const [view, setView] = useState('home')
   const [analysisStatus, setAnalysisStatus] = useState({ state: 'idle' })
   const [formError, setFormError] = useState('')
+  const [copyText, setCopyText] = useState('Copy summary')
   const [showAllSources, setShowAllSources] = useState(false)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -104,6 +105,44 @@ function App() {
     setAnalysisStatus({ state: 'idle' })
     navigate('scan')
   }
+
+  const handleCopySummary = async () => {
+    if (analysisStatus.state !== 'success' || !analysisStatus.data) return;
+    try {
+      const data = analysisStatus.data;
+      const summary = data.summary;
+      const originalAnalysis = data.originalUsernameAnalysis;
+      const emailExp = data.emailExposure;
+
+      const riskBadge = getRiskLevelBadge(summary.digitalExposureScore);
+      const emailExpText = emailExp?.error ? 'Check unavailable' : emailExp?.found ? `${emailExp.breachCount} possible breaches found` : 'No public breach exposure found';
+      
+      const originalPlatforms = (originalAnalysis?.platforms || [])
+        .filter((p) => p.found === true && !p.error)
+        .map((p) => p.signalType === 'public_signal' ? `${p.name} (public signal)` : p.verified ? `${p.name} (verified)` : `${p.name} (simulated)`);
+      const originalMatchesText = originalPlatforms.length > 0 ? originalPlatforms.join(', ') : 'None';
+
+      const textBlob = `Digital Footprint Summary
+-------------------------
+Email: ${data.email}
+Username: ${data.username}
+Digital Exposure Score: ${summary.digitalExposureScore}
+Risk Level: ${riskBadge.label}
+Username Reuse Risk: ${summary.usernameReuseRiskScore}
+Email Exposure: ${emailExpText}
+Verified Matches: ${summary.verifiedMatchCount}
+Simulated Matches: ${summary.simulatedMatchCount}
+Original Username Matches: ${originalMatchesText}`;
+
+      await navigator.clipboard.writeText(textBlob);
+      setCopyText('Copied');
+      setTimeout(() => setCopyText('Copy summary'), 2000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+      setCopyText('Copy failed');
+      setTimeout(() => setCopyText('Copy summary'), 2000);
+    }
+  };
 
   return (
     <>
@@ -266,9 +305,14 @@ function App() {
                           {email} <span style={{ opacity: 0.5, margin: '0 6px' }}>•</span> {username}
                         </div>
                       </div>
-                      <button onClick={handleNewScan} className="btnNewScan">
-                        Run new scan
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={handleCopySummary} className="btnNewScan" style={{ background: 'var(--bg-body)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+                          {copyText}
+                        </button>
+                        <button onClick={handleNewScan} className="btnNewScan">
+                          Run new scan
+                        </button>
+                      </div>
                     </div>
 
                     {(() => {
