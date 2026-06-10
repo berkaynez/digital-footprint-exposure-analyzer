@@ -131,6 +131,7 @@ Risk Level: ${riskBadge.label}
 Username Reuse Risk: ${summary.usernameReuseRiskScore}
 Email Exposure: ${emailExpText}
 Verified Matches: ${summary.verifiedMatchCount}
+Public Signals: ${summary.publicSignalMatchCount}
 Original Username Matches: ${originalMatchesText}`;
 
       await navigator.clipboard.writeText(textBlob);
@@ -411,6 +412,10 @@ Original Username Matches: ${originalMatchesText}`;
                             <dd>{analysisStatus.data.summary.verifiedMatchCount}</dd>
                           </div>
                           <div className="kvRow">
+                            <dt>Public Signals</dt>
+                            <dd>{analysisStatus.data.summary.publicSignalMatchCount}</dd>
+                          </div>
+                          <div className="kvRow">
                             <dt>Variations</dt>
                             <dd style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                               <span className="badge badge--high">{analysisStatus.data.summary.highRiskCount} H</span>
@@ -420,6 +425,9 @@ Original Username Matches: ${originalMatchesText}`;
                           </div>
                         </dl>
                       </div>
+
+                      {/* Public Profile Signals section removed */}
+
                     </div>
                   </>
                 )}

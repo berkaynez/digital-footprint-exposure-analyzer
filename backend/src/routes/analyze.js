@@ -9,6 +9,7 @@ const { checkGitLabUsername } = require('../utils/platformProviders/gitlab')
 const { checkRedditUsername } = require('../utils/platformProviders/reddit')
 const { checkYouTubeHandle } = require('../utils/platformProviders/youtube')
 const { checkTelegramUsername } = require('../utils/platformProviders/telegram')
+const { checkSnapchat } = require('../utils/platformProviders/snapchat')
 const { checkEmailExposure } = require('../utils/breachProviders')
 const { generateRecommendations } = require('../utils/recommendations')
 
@@ -68,12 +69,14 @@ router.post('/', async (req, res) => {
   const originalGitlab = await checkGitLabUsername(trimmedUsername)
   const originalReddit = await checkRedditUsername(trimmedUsername)
   const originalYouTube = await checkYouTubeHandle(trimmedUsername)
+  const originalSnapchat = await checkSnapchat(trimmedUsername)
   const originalTelegram = await checkTelegramUsername(trimmedUsername)
   const originalPlatforms = [
     { name: 'GitHub', ...originalGithub },
     originalGitlab,
     originalReddit,
     originalYouTube,
+    originalSnapchat,
     originalTelegram, // kept as disabled/unreliable placeholder
   ]
 
@@ -106,6 +109,7 @@ router.post('/', async (req, res) => {
       const gitlab = await checkGitLabUsername(variation)
       const reddit = await checkRedditUsername(variation)
       const youtube = await checkYouTubeHandle(variation)
+      const snapchat = await checkSnapchat(variation)
       const telegram = await checkTelegramUsername(variation)
       
       const platforms = [
@@ -114,6 +118,7 @@ router.post('/', async (req, res) => {
         gitlab,
         reddit,
         youtube,
+        snapchat,
         telegram,
       ]
 
