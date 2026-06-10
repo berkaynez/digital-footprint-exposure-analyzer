@@ -77,7 +77,7 @@ router.post('/', async (req, res) => {
     originalReddit,
     originalYouTube,
     originalSnapchat,
-    originalTelegram, // kept as disabled/unreliable placeholder
+    originalTelegram,
   ]
 
   let originalVerifiedMatchCount = 0
