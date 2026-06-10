@@ -35,13 +35,7 @@ function generateRecommendations(summary, emailExposure) {
     })
   }
 
-  if (summary.simulatedMatchCount > 10) {
-    recommendations.push({
-      severity: 'low',
-      title: 'Public Platform Visibility',
-      description: 'Your footprint spans many potential platforms. Review the public visibility settings of your active accounts.'
-    })
-  }
+  // Public platform visibility recommendation removed (simulated match logic removed)
 
   recommendations.push({
     severity: 'low',

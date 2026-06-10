@@ -35,16 +35,7 @@ function getConfidenceWeight(original, variation) {
   return 0.6 // fallback
 }
 
-function mockPlatformsForUsername(username, similarity) {
-  const possibleInstagram = username.includes('_')
-  const possibleMedium = username.length > 10
-
-  return [
-    { name: 'Medium', found: possibleMedium },
-    { name: 'Pinterest', found: false },
-    { name: 'Instagram', found: possibleInstagram },
-  ]
-}
+// mockPlatformsForUsername removed; simulated indicators removed for final reliability and academic clarity
 
 router.post('/', async (req, res) => {
   const { email, username } = req.body || {}
@@ -83,8 +74,7 @@ router.post('/', async (req, res) => {
     originalGitlab,
     originalReddit,
     originalYouTube,
-    originalTelegram,
-    ...mockPlatformsForUsername(trimmedUsername, 1.0)
+    originalTelegram, // kept as disabled/unreliable placeholder
   ]
 
   let originalVerifiedMatchCount = 0
@@ -95,7 +85,7 @@ router.post('/', async (req, res) => {
     if (p.found) {
       if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') originalVerifiedMatchCount++
       else if (p.signalType === 'public_signal') originalPublicSignalMatchCount++
-      else originalSimulatedMatchCount++
+      // simulated indicators removed; originalSimulatedMatchCount remains 0
     }
   })
 
@@ -125,8 +115,6 @@ router.post('/', async (req, res) => {
         reddit,
         youtube,
         telegram,
-        // Simulated prototype indicators
-        ...mockPlatformsForUsername(variation, score),
       ]
 
       const confidenceWeight = getConfidenceWeight(trimmedUsername, variation)
@@ -149,10 +137,9 @@ router.post('/', async (req, res) => {
   let publicSignalMatchCount = originalPublicSignalMatchCount
 
   // raw platform matches are displayed for transparency
-  // weighted scoring reduces false confidence from weak/simulated signals
+  // weighted scoring reduces false confidence from weak signals (simulated indicator weights removed for reliability)
   let weightedRisk = (originalVerifiedMatchCount * 15 * 1.0) + 
-                     (originalPublicSignalMatchCount * 15 * 0.4) + 
-                     (originalSimulatedMatchCount * 15 * 0.15)
+                     (originalPublicSignalMatchCount * 15 * 0.4)
 
   results.forEach(r => {
     let effectiveVariationWeight = r.confidenceWeight;
@@ -185,9 +172,6 @@ router.post('/', async (req, res) => {
         } else if (p.signalType === 'public_signal') {
           publicSignalMatchCount++
           weightedRisk += (5 * 0.4 * effectiveVariationWeight)
-        } else {
-          simulatedMatchCount++
-          weightedRisk += (5 * 0.15 * effectiveVariationWeight)
         }
       }
     })
@@ -231,7 +215,7 @@ router.post('/', async (req, res) => {
     lowRiskCount,
     verifiedMatchCount,
     publicSignalMatchCount,
-    simulatedMatchCount,
+    simulatedMatchCount: 0, // kept as 0 for backward compatibility; simulated matches removed
     usernameReuseRiskScore,
     dataSensitivityScore,
     breachFrequencyScore,

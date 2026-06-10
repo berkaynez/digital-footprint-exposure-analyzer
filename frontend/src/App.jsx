@@ -119,7 +119,7 @@ function App() {
       
       const originalPlatforms = (originalAnalysis?.platforms || [])
         .filter((p) => p.found === true && !p.error)
-        .map((p) => p.signalType === 'public_signal' ? `${p.name} (public signal)` : p.verified ? `${p.name} (verified)` : `${p.name} (simulated)`);
+        .map((p) => p.signalType === 'public_signal' ? `${p.name} (public signal)` : `${p.name} (verified)`);
       const originalMatchesText = originalPlatforms.length > 0 ? originalPlatforms.join(', ') : 'None';
 
       const textBlob = `Digital Footprint Summary
@@ -131,7 +131,6 @@ Risk Level: ${riskBadge.label}
 Username Reuse Risk: ${summary.usernameReuseRiskScore}
 Email Exposure: ${emailExpText}
 Verified Matches: ${summary.verifiedMatchCount}
-Simulated Matches: ${summary.simulatedMatchCount}
 Original Username Matches: ${originalMatchesText}`;
 
       await navigator.clipboard.writeText(textBlob);
@@ -408,8 +407,8 @@ Original Username Matches: ${originalMatchesText}`;
                             <dd>{analysisStatus.data.summary.usernameReuseRiskScore}/100</dd>
                           </div>
                           <div className="kvRow">
-                            <dt>Matches</dt>
-                            <dd>{analysisStatus.data.summary.verifiedMatchCount} Ver., {analysisStatus.data.summary.simulatedMatchCount} Sim.</dd>
+                            <dt>Verified Matches</dt>
+                            <dd>{analysisStatus.data.summary.verifiedMatchCount}</dd>
                           </div>
                           <div className="kvRow">
                             <dt>Variations</dt>
@@ -469,8 +468,7 @@ Original Username Matches: ${originalMatchesText}`;
                         .filter((p) => p.found === true && !p.error)
                         .map((p) => {
                           if (p.signalType === 'public_signal') return `${p.name} (public signal)`;
-                          if (p.verified) return `${p.name} (verified)`;
-                          return `${p.name} (simulated)`;
+                          return `${p.name} (verified)`;
                         });
                       
                       return (
@@ -511,8 +509,7 @@ Original Username Matches: ${originalMatchesText}`;
                                 .filter((p) => p.found === true && !p.error)
                                 .map((p) => {
                                   if (p.signalType === 'public_signal') return `${p.name} (public signal)`
-                                  if (p.verified) return `${p.name} (verified)`
-                                  return `${p.name} (simulated)`
+                                  return `${p.name} (verified)`
                                 })
 
                               return (
