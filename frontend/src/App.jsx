@@ -119,7 +119,7 @@ function App() {
       
       const originalPlatforms = (originalAnalysis?.platforms || [])
         .filter((p) => p.found === true && !p.error)
-        .map((p) => p.signalType === 'public_signal' ? `${p.name} (public signal)` : `${p.name} (verified)`);
+        .map((p) => p.signalType === 'public_signal' || p.signalType === 'restricted_public_signal' ? `${p.name} (public signal)` : `${p.name} (verified)`);
       const originalMatchesText = originalPlatforms.length > 0 ? originalPlatforms.join(', ') : 'None';
 
       const textBlob = `Digital Footprint Summary
@@ -475,7 +475,7 @@ Original Username Matches: ${originalMatchesText}`;
                       const matchedPlatforms = platforms
                         .filter((p) => p.found === true && !p.error)
                         .map((p) => {
-                          if (p.signalType === 'public_signal') return `${p.name} (public signal)`;
+                          if (p.signalType === 'public_signal' || p.signalType === 'restricted_public_signal') return `${p.name} (public signal)`;
                           return `${p.name} (verified)`;
                         });
                       
@@ -516,7 +516,7 @@ Original Username Matches: ${originalMatchesText}`;
                               const matchedPlatforms = platforms
                                 .filter((p) => p.found === true && !p.error)
                                 .map((p) => {
-                                  if (p.signalType === 'public_signal') return `${p.name} (public signal)`
+                                  if (p.signalType === 'public_signal' || p.signalType === 'restricted_public_signal') return `${p.name} (public signal)`
                                   return `${p.name} (verified)`
                                 })
 

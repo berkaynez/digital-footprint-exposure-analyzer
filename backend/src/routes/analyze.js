@@ -10,6 +10,9 @@ const { checkRedditUsername } = require('../utils/platformProviders/reddit')
 const { checkYouTubeHandle } = require('../utils/platformProviders/youtube')
 const { checkTelegramUsername } = require('../utils/platformProviders/telegram')
 const { checkSnapchat } = require('../utils/platformProviders/snapchat')
+const { checkInstagram } = require('../utils/platformProviders/instagram')
+const { checkX } = require('../utils/platformProviders/x')
+const { checkSteam } = require('../utils/platformProviders/steam')
 const { checkEmailExposure } = require('../utils/breachProviders')
 const { generateRecommendations } = require('../utils/recommendations')
 
@@ -19,6 +22,13 @@ function riskFromScore(score) {
   if (score >= 0.8) return 'high'
   if (score >= 0.5) return 'medium'
   return 'low'
+}
+
+function getProviderWeight(platform) {
+  if (platform.verified === true) return 1.0;
+  if (platform.signalType === 'public_signal') return 0.4;
+  if (platform.signalType === 'restricted_public_signal') return 0.25;
+  return 0;
 }
 
 // Similarity is raw string similarity.
@@ -70,25 +80,33 @@ router.post('/', async (req, res) => {
   const originalReddit = await checkRedditUsername(trimmedUsername)
   const originalYouTube = await checkYouTubeHandle(trimmedUsername)
   const originalSnapchat = await checkSnapchat(trimmedUsername)
+  const originalInstagram = await checkInstagram(trimmedUsername)
   const originalTelegram = await checkTelegramUsername(trimmedUsername)
+  const originalX = await checkX(trimmedUsername)
+  const originalSteam = await checkSteam(trimmedUsername)
   const originalPlatforms = [
     { name: 'GitHub', ...originalGithub },
     originalGitlab,
     originalReddit,
     originalYouTube,
     originalSnapchat,
+    originalInstagram,
     originalTelegram,
+    originalX,
+    originalSteam,
   ]
 
   let originalVerifiedMatchCount = 0
   let originalSimulatedMatchCount = 0
   let originalPublicSignalMatchCount = 0
 
+  let originalRestrictedSignalMatchCount = 0
+
   originalPlatforms.forEach(p => {
     if (p.found) {
-      if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') originalVerifiedMatchCount++
+      if (p.verified === true) originalVerifiedMatchCount++
       else if (p.signalType === 'public_signal') originalPublicSignalMatchCount++
-      // simulated indicators removed; originalSimulatedMatchCount remains 0
+      else if (p.signalType === 'restricted_public_signal') originalRestrictedSignalMatchCount++
     }
   })
 
@@ -110,7 +128,10 @@ router.post('/', async (req, res) => {
       const reddit = await checkRedditUsername(variation)
       const youtube = await checkYouTubeHandle(variation)
       const snapchat = await checkSnapchat(variation)
+      const instagram = await checkInstagram(variation)
       const telegram = await checkTelegramUsername(variation)
+      const xProvider = await checkX(variation)
+      const steam = await checkSteam(variation)
       
       const platforms = [
         // Verified API-based checks
@@ -119,7 +140,10 @@ router.post('/', async (req, res) => {
         reddit,
         youtube,
         snapchat,
+        instagram,
         telegram,
+        xProvider,
+        steam,
       ]
 
       const confidenceWeight = getConfidenceWeight(trimmedUsername, variation)
@@ -140,11 +164,16 @@ router.post('/', async (req, res) => {
   let verifiedMatchCount = originalVerifiedMatchCount
   let simulatedMatchCount = originalSimulatedMatchCount
   let publicSignalMatchCount = originalPublicSignalMatchCount
+  let restrictedSignalMatchCount = originalRestrictedSignalMatchCount
 
   // raw platform matches are displayed for transparency
   // weighted scoring reduces false confidence from weak signals (simulated indicator weights removed for reliability)
-  let weightedRisk = (originalVerifiedMatchCount * 15 * 1.0) + 
-                     (originalPublicSignalMatchCount * 15 * 0.4)
+  let weightedRisk = 0
+  originalPlatforms.forEach(p => {
+    if (p.found) {
+      weightedRisk += (15 * getProviderWeight(p))
+    }
+  })
 
   results.forEach(r => {
     let effectiveVariationWeight = r.confidenceWeight;
@@ -171,13 +200,14 @@ router.post('/', async (req, res) => {
 
     r.platforms.forEach(p => {
       if (p.found) {
-        if (p.name === 'GitHub' || p.name === 'GitLab' || p.name === 'Reddit' || p.name === 'YouTube') {
+        if (p.verified === true) {
           verifiedMatchCount++
-          weightedRisk += (5 * 1.0 * effectiveVariationWeight)
         } else if (p.signalType === 'public_signal') {
           publicSignalMatchCount++
-          weightedRisk += (5 * 0.4 * effectiveVariationWeight)
+        } else if (p.signalType === 'restricted_public_signal') {
+          restrictedSignalMatchCount++
         }
+        weightedRisk += (5 * getProviderWeight(p) * effectiveVariationWeight)
       }
     })
   })
@@ -219,7 +249,8 @@ router.post('/', async (req, res) => {
     mediumRiskCount,
     lowRiskCount,
     verifiedMatchCount,
-    publicSignalMatchCount,
+    publicSignalMatchCount: publicSignalMatchCount + restrictedSignalMatchCount,
+    restrictedSignalMatchCount,
     simulatedMatchCount: 0, // kept as 0 for backward compatibility; simulated matches removed
     usernameReuseRiskScore,
     dataSensitivityScore,
