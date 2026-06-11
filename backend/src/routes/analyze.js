@@ -166,34 +166,38 @@ router.post('/', async (req, res) => {
   let publicSignalMatchCount = originalPublicSignalMatchCount
   let restrictedSignalMatchCount = originalRestrictedSignalMatchCount
 
-  // raw platform matches are displayed for transparency
-  // weighted scoring reduces false confidence from weak signals (simulated indicator weights removed for reliability)
-  let weightedRisk = 0
+  // The scoring model is separated into two explicit components for academic defensibility:
+  // 1. Username Exposure (weighted at 45%): Calculated from cross-platform username existence.
+  //    - Verified APIs have higher weights (1.0) compared to public heuristic signals (0.4) to reduce false positives.
+  //    - Generic or truncated variations are penalized to dampen noise.
+  // 2. Email Exposure (weighted at 55%): Based on empirical breach counts and severity of exposed fields.
+  //    - Email breaches are weighted slightly heavier because they represent confirmed compromised personal data.
+
+  let weightedUsernameRisk = 0
+  const ORIGINAL_BASE = 18
+  const VARIATION_BASE = 6
+
   originalPlatforms.forEach(p => {
     if (p.found) {
-      weightedRisk += (15 * getProviderWeight(p))
+      weightedUsernameRisk += (getProviderWeight(p) * 1.0 * ORIGINAL_BASE)
     }
   })
 
   results.forEach(r => {
     let effectiveVariationWeight = r.confidenceWeight;
 
-    // shortened/truncated candidates: max contribution should be capped at 0.25 even if verified providers match
+    // Dampen short/truncated variations to prevent generic username matches from inflating the score
     if (r.username.length < trimmedUsername.length && effectiveVariationWeight > 0.25) {
       effectiveVariationWeight = 0.25;
     }
-
-    // if candidate username length <= 5 and candidate is shorter than original username: cap its scoring contribution to 20% of normal
     if (r.username.length <= 5 && r.username.length < trimmedUsername.length) {
       effectiveVariationWeight *= 0.2;
     }
 
     if (r.risk === 'high') {
       highRiskCount++
-      weightedRisk += (1 * effectiveVariationWeight)
     } else if (r.risk === 'medium') {
       mediumRiskCount++
-      weightedRisk += (0.5 * effectiveVariationWeight)
     } else if (r.risk === 'low') {
       lowRiskCount++
     }
@@ -207,41 +211,48 @@ router.post('/', async (req, res) => {
         } else if (p.signalType === 'restricted_public_signal') {
           restrictedSignalMatchCount++
         }
-        weightedRisk += (5 * getProviderWeight(p) * effectiveVariationWeight)
+        weightedUsernameRisk += (getProviderWeight(p) * effectiveVariationWeight * VARIATION_BASE)
       }
     })
   })
 
-  // The displayed match counts are raw transparency metrics; the score uses weighted risk to avoid over-counting weak or generic matches.
-  let usernameReuseRiskScore = Math.min(
-    100,
-    Math.round(weightedRisk * 1.2)
-  )
+  let usernameExposureScore = Math.min(100, Math.round(weightedUsernameRisk))
+  // Kept for backward compatibility mapping
+  let usernameReuseRiskScore = usernameExposureScore
 
   const emailExposure = await checkEmailExposure(trimmedEmail)
 
-  let dataSensitivityScore = 0
+  let breachCountContribution = 0
+  if (emailExposure && emailExposure.breachCount) {
+    const count = emailExposure.breachCount
+    if (count === 1) breachCountContribution = 15
+    else if (count >= 2 && count <= 5) breachCountContribution = 30
+    else if (count >= 6 && count <= 15) breachCountContribution = 45
+    else if (count >= 16) breachCountContribution = 60
+  }
+
+  let sensitiveFieldContribution = 0
   if (emailExposure && emailExposure.exposedFields) {
     const fields = emailExposure.exposedFields.map(f => f.toLowerCase())
-    if (fields.includes('password')) dataSensitivityScore += 25
-    if (fields.includes('email')) dataSensitivityScore += 10
-    if (fields.includes('ip')) dataSensitivityScore += 5
-    if (fields.includes('dob')) dataSensitivityScore += 10
-    if (fields.includes('address')) dataSensitivityScore += 10
-    if (fields.includes('first_name') || fields.includes('last_name')) dataSensitivityScore += 5
-  }
-  dataSensitivityScore = Math.min(dataSensitivityScore, 40)
+    
+    const hasPassword = fields.some(f => f.includes('password') || f.includes('credential'))
+    const hasPII = fields.some(f => 
+      f.includes('name') || f.includes('phone') || f.includes('address') || 
+      f.includes('dob') || f.includes('ip') || f.includes('location')
+    )
+    const hasBasic = fields.some(f => f.includes('email') || f.includes('username'))
 
-  let breachFrequencyScore = 0
-  if (emailExposure && emailExposure.breachCount) {
-    breachFrequencyScore = emailExposure.breachCount * 3
-  }
-  breachFrequencyScore = Math.min(breachFrequencyScore, 30)
+    if (hasPassword) sensitiveFieldContribution += 25
+    if (hasPII) sensitiveFieldContribution += 15
+    if (sensitiveFieldContribution === 0 && hasBasic) sensitiveFieldContribution += 5
 
-  let usernameReuseContribution = usernameReuseRiskScore * 0.3
-  
-  let digitalExposureScore = dataSensitivityScore + breachFrequencyScore + usernameReuseContribution
-  digitalExposureScore = Math.min(Math.round(digitalExposureScore), 100)
+    // Prevent a single heavily breached account from contributing disproportionately
+    sensitiveFieldContribution = Math.min(sensitiveFieldContribution, 40)
+  }
+
+  let emailExposureScore = Math.min(100, breachCountContribution + sensitiveFieldContribution)
+
+  let digitalExposureScore = Math.round((0.55 * emailExposureScore) + (0.45 * usernameExposureScore))
 
   const summary = {
     totalVariations: results.length,
@@ -251,11 +262,10 @@ router.post('/', async (req, res) => {
     verifiedMatchCount,
     publicSignalMatchCount: publicSignalMatchCount + restrictedSignalMatchCount,
     restrictedSignalMatchCount,
-    simulatedMatchCount: 0, // kept as 0 for backward compatibility; simulated matches removed
-    usernameReuseRiskScore,
-    dataSensitivityScore,
-    breachFrequencyScore,
-    usernameReuseContribution,
+    simulatedMatchCount: 0,
+    usernameReuseRiskScore, // Legacy mapping
+    emailExposureScore,
+    usernameExposureScore,
     digitalExposureScore
   }
 

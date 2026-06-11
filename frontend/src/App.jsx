@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import logoDark from './assets/personawatch-logo.png'
+import logoLight from './assets/personawatch-logo-black.png'
+import monogramDark from './assets/pw-monogram.png'
+import monogramLight from './assets/pw-monogram-black.png'
 import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5053'
@@ -128,8 +132,9 @@ Email: ${data.email}
 Username: ${data.username}
 Digital Exposure Score: ${summary.digitalExposureScore}
 Risk Level: ${riskBadge.label}
-Username Reuse Risk: ${summary.usernameReuseRiskScore}
-Email Exposure: ${emailExpText}
+Email Exposure Score: ${summary.emailExposureScore}
+Username Exposure Score: ${summary.usernameExposureScore}
+Email Breach Details: ${emailExpText}
 Verified Matches: ${summary.verifiedMatchCount}
 Public Signals: ${summary.publicSignalMatchCount}
 Original Username Matches: ${originalMatchesText}`;
@@ -148,13 +153,15 @@ Original Username Matches: ${originalMatchesText}`;
     <>
       <nav className="topNav">
         <div className="navContainer">
-          <a href="#home" className="navLogo" onClick={(e) => { e.preventDefault(); navigate('home') }}>FootprintGuard</a>
+          <a href="#home" className="navLogo" onClick={(e) => { e.preventDefault(); navigate('home') }}>
+            <img src={theme === 'dark' ? logoDark : logoLight} alt="PersonaWatch" style={{ height: '38px', width: 'auto', objectFit: 'contain', display: 'block' }} />
+          </a>
           <div className="navLinks">
-            <a href="#scan" className="navLink" onClick={(e) => { e.preventDefault(); navigate('scan') }}>Scan</a>
-            <a href="#how-it-works" className="navLink" onClick={(e) => { e.preventDefault(); navigate('home', 'how-it-works') }}>How it works</a>
-            <a href="#faq" className="navLink" onClick={(e) => { e.preventDefault(); navigate('home', 'faq') }}>FAQ</a>
-            <a href="#privacy" className="navLink" onClick={(e) => { e.preventDefault(); document.getElementById('privacy')?.scrollIntoView({ behavior: 'smooth' }) }}>Privacy</a>
-            {analysisStatus.state !== 'idle' && <button onClick={handleNewScan} className="navLink" style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, color: 'var(--accent)' }}>New scan</button>}
+            <a href="#home" className="navLink" onClick={(e) => { e.preventDefault(); navigate('home') }}>Home</a>
+            <a href="#methodology" className="navLink" onClick={(e) => { e.preventDefault(); navigate('methodology') }}>Methodology</a>
+            <a href="#privacy" className="navLink" onClick={(e) => { e.preventDefault(); navigate('privacy') }}>Privacy</a>
+            <a href="#about" className="navLink" onClick={(e) => { e.preventDefault(); navigate('about') }}>About</a>
+            <a href="#scan" className="navLink" onClick={(e) => { e.preventDefault(); navigate('scan') }} style={{ fontWeight: 600, color: 'var(--accent)' }}>New Scan</a>
             <button className="themeToggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
             </button>
@@ -165,37 +172,60 @@ Original Username Matches: ${originalMatchesText}`;
       {view === 'home' && (
         <main className="container">
           <header id="home" className="heroContainer">
-            <h1 className="heroTitle">Understand your public digital exposure</h1>
-            <p className="heroSubtitle">Check email breach signals and username reuse patterns without displaying leaked passwords.</p>
-            <div className="heroActions">
+            <img src={theme === 'dark' ? monogramDark : monogramLight} alt="PersonaWatch Monogram" style={{ height: '64px', width: 'auto', marginBottom: '18px', display: 'block' }} />
+            <h1 className="heroTitle">PersonaWatch</h1>
+            <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-h)', marginBottom: '16px', letterSpacing: '-0.5px' }}>Digital Exposure Intelligence Platform</h2>
+            <p className="heroSubtitle" style={{ marginBottom: '40px' }}>Measure breach exposure, username reuse, and public account signals through a transparent scoring model.</p>
+            <div className="heroButtons">
               <a href="#scan" className="heroButtonPrimary" onClick={(e) => { e.preventDefault(); navigate('scan') }}>Start scan</a>
-              <a href="#how-it-works" className="heroButtonSecondary" onClick={(e) => { e.preventDefault(); navigate('home', 'how-it-works') }}>How it works</a>
+              <a href="#methodology" className="heroButtonSecondary" onClick={(e) => { e.preventDefault(); navigate('methodology') }}>View methodology</a>
             </div>
             <div className="heroTrustRow">
-              <span>Private by default</span>
-              <span>Real-time analysis</span>
-              <span>Metadata only</span>
+              <span>Privacy-first</span>
+              <span>Metadata-only</span>
+              <span>No password collection</span>
             </div>
           </header>
 
+          <section id="features" className="infoSection" style={{ marginBottom: '40px' }}>
+            <h2 className="title" style={{ fontSize: '22px' }}>Platform Capabilities</h2>
+            <div className="stepsGrid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+              <div className="stepCard">
+                <h3 className="stepTitle">Breach Intelligence</h3>
+                <p className="stepDesc">Query known public breach databases to identify exposed email accounts and compromised fields.</p>
+              </div>
+              <div className="stepCard">
+                <h3 className="stepTitle">Username Reuse</h3>
+                <p className="stepDesc">Detect cross-platform username availability and map potential digital footprint overlap.</p>
+              </div>
+              <div className="stepCard">
+                <h3 className="stepTitle">Public Signals</h3>
+                <p className="stepDesc">Gather intelligence entirely from public endpoints without triggering authenticated security alerts.</p>
+              </div>
+              <div className="stepCard">
+                <h3 className="stepTitle">Transparent Risk</h3>
+                <p className="stepDesc">Analyze findings through a deterministic, math-driven scoring engine capped safely at 100.</p>
+              </div>
+            </div>
+          </section>
+
           <section id="how-it-works" className="infoSection">
             <h2 className="title" style={{ fontSize: '22px' }}>How it works</h2>
-            <p className="subtitle">Three simple steps to understand your exposure.</p>
             <div className="stepsGrid">
               <div className="stepCard">
                 <div className="stepNumber">1</div>
-                <h3 className="stepTitle">Enter your details</h3>
-                <p className="stepDesc">Provide an email and username. We only use these to query public breach databases and social metadata.</p>
+                <h3 className="stepTitle">Identity Analysis</h3>
+                <p className="stepDesc">Submit a username and email to initiate a silent footprinting scan across public endpoints.</p>
               </div>
               <div className="stepCard">
                 <div className="stepNumber">2</div>
-                <h3 className="stepTitle">We check public signals</h3>
-                <p className="stepDesc">Our engine cross-references your details against known data breaches and checks username availability across platforms.</p>
+                <h3 className="stepTitle">Exposure Correlation</h3>
+                <p className="stepDesc">The platform correlates identified breach records and verified social platform matches.</p>
               </div>
               <div className="stepCard">
                 <div className="stepNumber">3</div>
-                <h3 className="stepTitle">Get your risk score</h3>
-                <p className="stepDesc">Receive a comprehensive digital exposure score and actionable recommendations to secure your online presence.</p>
+                <h3 className="stepTitle">Risk Assessment</h3>
+                <p className="stepDesc">A weighted algorithm calculates distinct Email and Username Exposure scores to formulate a final threat level.</p>
               </div>
             </div>
           </section>
@@ -212,7 +242,7 @@ Original Username Matches: ${originalMatchesText}`;
             </div>
             <div className="faqItem">
               <h3 className="faqQuestion">What does the score mean?</h3>
-              <p className="faqAnswer">The score is a relative indicator based on public data signals, such as known breaches and username availability across platforms. It helps you understand how easily your online presence can be correlated.</p>
+              <p className="faqAnswer">The Digital Exposure Score is calculated from two components: Email Exposure Score and Username Exposure Score. Email exposure contributes 55% of the final score, while username exposure contributes 45%. This helps separate direct breach history from cross-platform visibility and identity correlation.</p>
             </div>
           </section>
         </main>
@@ -351,6 +381,10 @@ Original Username Matches: ${originalMatchesText}`;
                       <div className="dashboardCard">
                         <h4 className="sectionTitle">Email Exposure</h4>
                         <dl className="kv">
+                          <div className="kvRow">
+                            <dt>Email Score</dt>
+                            <dd>{analysisStatus.data.summary.emailExposureScore}/100</dd>
+                          </div>
                           <div className="kvRow" style={{ gridTemplateColumns: '1fr', padding: 0 }}>
                             <dd>
                               {analysisStatus.data.emailExposure ? (
@@ -404,8 +438,8 @@ Original Username Matches: ${originalMatchesText}`;
                         <h4 className="sectionTitle">Username Intelligence</h4>
                         <dl className="kv">
                           <div className="kvRow">
-                            <dt>Reuse Risk</dt>
-                            <dd>{analysisStatus.data.summary.usernameReuseRiskScore}/100</dd>
+                            <dt>Username Score</dt>
+                            <dd>{analysisStatus.data.summary.usernameExposureScore}/100</dd>
                           </div>
                           <div className="kvRow">
                             <dt>Verified Matches</dt>
@@ -418,15 +452,31 @@ Original Username Matches: ${originalMatchesText}`;
                           <div className="kvRow">
                             <dt>Variations</dt>
                             <dd style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                              <span className="badge badge--high">{analysisStatus.data.summary.highRiskCount} H</span>
-                              <span className="badge badge--medium">{analysisStatus.data.summary.mediumRiskCount} M</span>
-                              <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} L</span>
+                              <span className="badge badge--high">{analysisStatus.data.summary.highRiskCount} Close</span>
+                              <span className="badge badge--medium">{analysisStatus.data.summary.mediumRiskCount} Partial</span>
+                              <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} Weak</span>
                             </dd>
                           </div>
                         </dl>
                       </div>
 
-                      {/* Public Profile Signals section removed */}
+                      <div className="dashboardCard" style={{ gridColumn: '1 / -1', background: 'var(--bg-card)', border: '1px dashed var(--border)' }}>
+                        <h4 className="sectionTitle">Why This Score?</h4>
+                        <p style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--color-secondary)' }}>The Digital Exposure Score mathematically blends your raw exposure levels across two key vectors.</p>
+                        <dl className="kv" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                          <div className="kvRow" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <dt style={{ width: '100%' }}>Email Exposure (55%)</dt>
+                            <dd style={{ width: '100%', fontSize: '20px', fontWeight: '700', marginTop: '4px' }}>{analysisStatus.data.summary.emailExposureScore} / 100</dd>
+                          </div>
+                          <div className="kvRow" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <dt style={{ width: '100%' }}>Username Exposure (45%)</dt>
+                            <dd style={{ width: '100%', fontSize: '20px', fontWeight: '700', marginTop: '4px' }}>{analysisStatus.data.summary.usernameExposureScore} / 100</dd>
+                          </div>
+                        </dl>
+                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                          <span style={{ fontSize: '15px', fontWeight: '600' }}>Overall Exposure: {analysisStatus.data.summary.digitalExposureScore} / 100</span>
+                        </div>
+                      </div>
 
                     </div>
                   </>
@@ -440,18 +490,24 @@ Original Username Matches: ${originalMatchesText}`;
                         const actionText = rec.severity === 'high' ? 'Fix Now' : rec.severity === 'medium' ? 'Improve Security' : 'Optional';
                         const shortDescription = rec.description.split('.')[0] + '.';
                         return (
-                          <li key={idx} style={{ padding: '0.75rem', borderLeft: `3px solid var(--color-${rec.severity === 'high' ? 'error' : rec.severity === 'medium' ? 'warning' : 'primary'})`, background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                            <div className="recommendationHeader">
+                          <li key={idx} style={{ padding: '16px', borderLeft: `4px solid var(--color-${rec.severity === 'high' ? 'error' : rec.severity === 'medium' ? 'warning' : 'primary'})`, background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)', borderBottom: '1px solid var(--card-border)', borderRadius: '8px' }}>
+                            <div className="recommendationHeader" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                               <span className={`actionLabel actionLabel--${rec.severity}`}>{actionText}</span>
-                              <strong style={{ fontSize: '0.95em' }}>{rec.title}</strong>
+                              <strong style={{ fontSize: '15px' }}>{rec.title}</strong>
                             </div>
-                            <p style={{ margin: 0, opacity: 0.75, fontSize: '0.85em', lineHeight: 1.4 }}>{shortDescription}</p>
+                            <p style={{ margin: 0, opacity: 0.85, fontSize: '14px', lineHeight: 1.5 }}>{shortDescription}</p>
                           </li>
                         )
                       })}
                     </ul>
                   </div>
                 )}
+
+                <div className="disclaimer" style={{ marginTop: '48px', marginBottom: '48px', padding: '20px', borderRadius: '8px', border: '1px solid var(--card-border)', background: 'var(--bg)' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: '1.6', margin: 0, textAlign: 'center', opacity: 0.85 }}>
+                    PersonaWatch is an academic research prototype. Results indicate public exposure signals and do not prove definitive account ownership.
+                  </p>
+                </div>
 
                 {analysisStatus.state === 'success' && (
                   <div className="dashboardCard" id="next-steps" style={{ marginBottom: '1.5rem' }}>
@@ -501,44 +557,53 @@ Original Username Matches: ${originalMatchesText}`;
 
                 {analysisStatus.state === 'success' && (
                   <details className="variationsDetails">
-                    <summary>Similar Username Variations</summary>
+                    <summary>
+                      <span>Generated Username Variations</span>
+                      <span className="badge badge--low" style={{ marginLeft: 'auto' }}>{analysisStatus.data?.results?.length || 0} variants</span>
+                    </summary>
                     <div className="detailsContent">
+                      <p style={{ fontSize: '13px', color: 'var(--text)', margin: '16px 0 12px 0', lineHeight: '1.5' }}>These are algorithmically generated username variants used to detect possible reuse patterns. Similarity labels describe closeness to the submitted username, not account ownership.</p>
                       <>
                         {analysisStatus.data?.results?.length ? (
-                          <ul className="variationList" style={{ marginTop: '16px' }}>
-                            {analysisStatus.data.results.map((r) => {
+                          <ul className="variationList" style={{ marginTop: '0' }}>
+                            {analysisStatus.data.results.map((r, i) => {
                               const platforms = Array.isArray(r.platforms)
-                                ? r.platforms.filter(
-                                    (p) => p && typeof p.name === 'string',
-                                  )
-                                : []
+                                ? r.platforms.filter((p) => p && typeof p.name === 'string')
+                                : [];
 
                               const matchedPlatforms = platforms
                                 .filter((p) => p.found === true && !p.error)
                                 .map((p) => {
-                                  if (p.signalType === 'public_signal' || p.signalType === 'restricted_public_signal') return `${p.name} (public signal)`
-                                  return `${p.name} (verified)`
-                                })
+                                  if (p.signalType === 'public_signal' || p.signalType === 'restricted_public_signal') return `${p.name} (public signal)`;
+                                  return `${p.name} (verified)`;
+                                });
+
+                              const mapping = {
+                                high: { label: 'Close match', cls: 'badge--high' },
+                                medium: { label: 'Partial match', cls: 'badge--medium' },
+                                low: { label: 'Weak match', cls: 'badge--low' }
+                              };
+                              const sim = mapping[r.risk] || mapping.low;
 
                               return (
-                                <li key={r.username} className="compactResultItem">
-                                  <div className="resultRow" style={{ gap: '8px' }}>
-                                    <code className="inlineCode" style={{ fontSize: '12px' }}>{r.username}</code>
-                                    <span className="percent" style={{ fontSize: '12px' }}>
-                                      {toPercent(r.similarity)}
+                                <li key={r.username} className="compactResultItem" style={{ listStyle: 'none' }}>
+                                  <div className="resultRow" style={{ gap: '8px', gridTemplateColumns: '1fr auto auto auto' }}>
+                                    <code className="inlineCode" style={{ fontSize: '13px' }}>{r.username}</code>
+                                    <span className={`badge ${sim.cls}`} style={{ padding: '2px 8px', fontSize: '11px' }}>
+                                      {sim.label}
                                     </span>
-                                    <span className={`badge badge--${r.risk}`} style={{ padding: '2px 6px', fontSize: '10px' }}>
-                                      {r.risk}
+                                    <span className="percent" style={{ fontSize: '13px' }}>
+                                      {Math.round(r.similarity * 100)}%
                                     </span>
                                   </div>
 
-                                  <div className="platformMatches" style={{ marginTop: '4px', fontSize: '12px' }}>
+                                  <div className="platformMatches" style={{ marginTop: '6px', fontSize: '13px' }}>
                                     {matchedPlatforms.length ? (
                                       <>
-                                        <span className="platformLabel">Matches:</span> {matchedPlatforms.join(', ')}
+                                        <span className="platformLabel">Matches:</span> <span style={{ color: 'var(--text-h)' }}>{matchedPlatforms.join(', ')}</span>
                                       </>
                                     ) : (
-                                      'No matches'
+                                      <span style={{ opacity: 0.6 }}>No platform matches</span>
                                     )}
                                   </div>
                                 </li>
@@ -546,7 +611,7 @@ Original Username Matches: ${originalMatchesText}`;
                             })}
                           </ul>
                         ) : (
-                          <p style={{ opacity: 0.8, marginTop: '16px' }}>No results.</p>
+                          <p style={{ opacity: 0.8, marginTop: '16px' }}>No variations generated.</p>
                         )}
                       </>
                     </div>
@@ -556,10 +621,122 @@ Original Username Matches: ${originalMatchesText}`;
           </div>
         </main>
       )}
-      <footer id="privacy" className="footer">
-        <p><strong>FootprintGuard Beta</strong></p>
-        <p>Privacy-first prototype &middot; Academic research &middot; Product development</p>
-        <p style={{ opacity: 0.7, marginTop: '8px' }}>No passwords displayed &middot; Metadata-only analysis</p>
+      {view === 'methodology' && (
+        <main className="container" id="methodology">
+          <section className="infoSection" style={{ borderTop: 'none', paddingTop: '0' }}>
+            <header style={{ marginBottom: '32px', textAlign: 'center' }}>
+              <h2 className="title" style={{ fontSize: '36px', marginBottom: '8px' }}>Methodology</h2>
+              <p className="subtitle" style={{ fontSize: '16px' }}>How PersonaWatch calculates digital exposure.</p>
+            </header>
+            
+            <div className="dashboardStack">
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">1. Scoring Formula</h3>
+                <p>The Digital Exposure Score is calculated using a weighted deterministic formula:</p>
+                <div style={{ background: 'var(--code-bg)', padding: '16px', borderRadius: '8px', margin: '16px 0', fontFamily: 'var(--mono)', fontSize: '14px', color: 'var(--text-h)', textAlign: 'center', border: '1px solid var(--card-border)' }}>
+                  Digital Exposure Score =<br/>
+                  (0.55 × Email Exposure Score) +<br/>
+                  (0.45 × Username Exposure Score)
+                </div>
+                <p style={{ fontSize: '14px' }}>This ensures that email breaches (which carry inherently higher immediate risk) are prioritized slightly above username visibility.</p>
+              </div>
+              
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">2. Provider Reliability Weights</h3>
+                <p>Social platform matches are weighted by their technical reliability to prevent false positives from generic platform endpoints:</p>
+                <ul style={{ paddingLeft: '24px', margin: '16px 0', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <li><strong style={{ color: 'var(--text-h)' }}>Verified Providers (1.0)</strong>: Direct API integrations with definitive responses (e.g., GitHub, GitLab).</li>
+                  <li><strong style={{ color: 'var(--text-h)' }}>Public Signals (0.4)</strong>: Heuristic scraping where HTTP redirects are used.</li>
+                  <li><strong style={{ color: 'var(--text-h)' }}>Restricted Signals (0.25)</strong>: Platforms with anti-bot mechanisms where verification is highly uncertain.</li>
+                </ul>
+              </div>
+
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">3. Candidate Dampening</h3>
+                <p style={{ fontSize: '14px' }}>Generic or short username variations (e.g., 5 characters or less) are heavily mathematically dampened in the codebase. This ensures that extremely common names (like "admin" or "john") do not artificially inflate the risk score when they predictably match on highly populated public signals.</p>
+              </div>
+
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">4. Privacy Boundaries</h3>
+                <p style={{ fontSize: '14px' }}>No user-authenticated OAuth flows are used to check signals. The methodology exclusively relies on scraping public URL patterns and referencing historically public breach records without persisting the results.</p>
+              </div>
+            </div>
+          </section>
+        </main>
+      )}
+
+      {view === 'privacy' && (
+        <main className="container" id="privacy-page">
+          <section className="infoSection" style={{ borderTop: 'none', paddingTop: '0' }}>
+            <header style={{ marginBottom: '40px', textAlign: 'center' }}>
+              <h2 className="title" style={{ fontSize: '36px', marginBottom: '12px' }}>Privacy-first by design</h2>
+              <p className="subtitle" style={{ fontSize: '18px', maxWidth: '700px', margin: '0 auto', lineHeight: '1.5' }}>PersonaWatch analyzes exposure indicators without collecting passwords or storing scan history.</p>
+            </header>
+            
+            <div className="dashboardStack">
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">1. No password collection</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>We never ask for, retrieve, display, or store passwords.</p>
+              </div>
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">2. Metadata-only analysis</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>Results are limited to breach names, exposed field categories, match counts, and public signal indicators.</p>
+              </div>
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">3. No scan history stored</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>Scans are processed in memory and are not saved as user history.</p>
+              </div>
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">4. Third-party verification</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>External APIs may be queried to verify breach exposure and platform visibility.</p>
+              </div>
+            </div>
+          </section>
+        </main>
+      )}
+
+      {view === 'about' && (
+        <main className="container" id="about">
+          <section className="infoSection" style={{ borderTop: 'none', paddingTop: '0' }}>
+            <header style={{ marginBottom: '40px', textAlign: 'center' }}>
+              <h2 className="title" style={{ fontSize: '36px', marginBottom: '12px' }}>About PersonaWatch</h2>
+              <p className="subtitle" style={{ fontSize: '18px', maxWidth: '700px', margin: '0 auto', lineHeight: '1.5' }}>A digital exposure intelligence platform developed as an academic research prototype.</p>
+            </header>
+            
+            <div className="dashboardStack" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">Research purpose</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>PersonaWatch explores how breach intelligence and public account signals can be combined to measure digital exposure.</p>
+              </div>
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">Technical foundation</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>The system uses React, Node.js/Express, external APIs, and conservative public signal providers.</p>
+              </div>
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">Practical contribution</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>The platform translates scattered exposure indicators into understandable risk scores and actionable recommendations.</p>
+              </div>
+              <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
+                <h3 className="cardTitle">Ethical boundary</h3>
+                <p style={{ fontSize: '14px', lineHeight: '1.6' }}>PersonaWatch reports exposure indicators only and avoids storing or displaying sensitive personal content.</p>
+              </div>
+            </div>
+
+            <div className="disclaimer" style={{ marginTop: '32px', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', background: 'transparent' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: '1.5', margin: 0, textAlign: 'center', opacity: 0.8 }}>
+                PersonaWatch is not a forensic identity verification system and does not prove account ownership.
+              </p>
+            </div>
+          </section>
+        </main>
+      )}
+
+      <footer className="footer">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '24px' }}>
+          <img src={theme === 'dark' ? logoDark : logoLight} alt="PersonaWatch" style={{ height: '42px', width: 'auto', objectFit: 'contain', display: 'block' }} />
+        </div>
+        <p>Digital Exposure Intelligence Platform</p>
+        <p>Academic Research Project &middot; Privacy-first design &middot; Metadata-only analysis</p>
       </footer>
     </>
   )

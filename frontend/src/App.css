@@ -25,10 +25,10 @@
 }
 
 .card {
-  margin-top: 20px;
+  margin-top: 24px;
   border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 24px;
   background: var(--card-bg);
   box-shadow: var(--shadow);
 }
@@ -359,8 +359,8 @@ details.variationsDetails > summary {
   color: var(--text-h);
   list-style: none;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 details.variationsDetails > summary::-webkit-details-marker {
@@ -411,6 +411,9 @@ details.variationsDetails > .detailsContent {
   color: var(--text-h);
   text-decoration: none;
   letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .navLinks {
   display: flex;
@@ -708,30 +711,30 @@ details.variationsDetails > .detailsContent {
   z-index: -1;
 }
 .heroTitle {
-  font-size: 42px;
+  font-size: 48px;
   font-weight: 800;
   color: var(--text-h);
-  margin: 0 0 16px 0;
-  line-height: 1.1;
+  margin: 0 0 20px 0;
+  line-height: 1.15;
   letter-spacing: -1px;
   max-width: 800px;
 }
 .heroSubtitle {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--text);
-  margin: 0 0 32px 0;
-  line-height: 1.5;
+  margin: 0 0 40px 0;
+  line-height: 1.6;
   max-width: 700px;
 }
-.heroActions {
+.heroButtons {
   display: flex;
   gap: 16px;
   justify-content: center;
   align-items: center;
 }
 .heroButtonPrimary {
-  padding: 14px 24px;
-  border-radius: 12px;
+  padding: 14px 28px;
+  border-radius: 8px;
   background: var(--accent-bg);
   color: var(--accent-text);
   text-decoration: none;
@@ -741,10 +744,11 @@ details.variationsDetails > .detailsContent {
 }
 .heroButtonPrimary:hover {
   filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 .heroButtonSecondary {
-  padding: 14px 24px;
-  border-radius: 12px;
+  padding: 14px 28px;
+  border-radius: 8px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   color: var(--text-h);
