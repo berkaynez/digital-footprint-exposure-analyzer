@@ -34,16 +34,25 @@ PDF Reporting Layer
 
 ## Screenshots
 
-*Images are located in the `/docs` directory.*
+Images are located in the `docs/` directory.
 
-- **Home Page**
-  ![Home Page](docs/home-page.png)
+### Home Page
 
-- **Results Dashboard**
-  ![Results Dashboard](docs/results-dashboard.png)
+<p align="center">
+  <img src="docs/home-page.png" alt="PersonaWatch Home Page" width="800">
+</p>
 
-- **PDF Export Report**
-  ![PDF Export Report](docs/pdf-export-report.png)
+### Results Dashboard
+
+<p align="center">
+  <img src="docs/results-dashboard.png" alt="PersonaWatch Results Dashboard" width="800">
+</p>
+
+### PDF Export Report
+
+<p align="center">
+  <img src="docs/pdf-export-report.png" alt="PersonaWatch PDF Export Report" width="650">
+</p>
 
 ## Scanning Modes
 
