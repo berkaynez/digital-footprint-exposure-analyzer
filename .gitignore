@@ -137,3 +137,7 @@ dist
 
 # Ignore macOS system files
 .DS_Store
+# Scratch and generated artifacts
+scratch/
+
+*.swp

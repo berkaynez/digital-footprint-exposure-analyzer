@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 function logAndReturn(result) {
   if (process.env.DEBUG_PROVIDERS === "true") {
     console.log(`[DEBUG_PROVIDERS] Instagram Result:`, {
@@ -42,7 +43,7 @@ async function checkInstagram(username) {
   const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'application/json',

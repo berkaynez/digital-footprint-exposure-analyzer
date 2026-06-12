@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('./fetchWithTimeout');
 function isValidGitHubUsername(username) {
   const u = String(username || '')
   if (u.length < 1 || u.length > 39) return false
@@ -24,7 +25,7 @@ async function checkGitHubUsername(username) {
       headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`
     }
 
-    const res = await fetch(`https://api.github.com/users/${encodeURIComponent(u)}`, {
+    const res = await fetchWithTimeout(`https://api.github.com/users/${encodeURIComponent(u)}`, {
       headers,
     })
 

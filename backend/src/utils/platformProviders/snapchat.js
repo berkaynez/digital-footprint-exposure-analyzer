@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 async function checkSnapchat(username) {
   // 1. Validate username format: allowed characters (letters, numbers, _, -, .) length 3-30
   if (
@@ -12,7 +13,7 @@ async function checkSnapchat(username) {
   const url = `https://www.snapchat.com/add/${encodeURIComponent(username)}`;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',

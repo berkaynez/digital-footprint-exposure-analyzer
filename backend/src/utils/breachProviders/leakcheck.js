@@ -1,6 +1,7 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 async function checkLeakCheck(identifier) {
   try {
-    const res = await fetch(`https://leakcheck.io/api/public?check=${encodeURIComponent(identifier)}`)
+    const res = await fetchWithTimeout(`https://leakcheck.io/api/public?check=${encodeURIComponent(identifier)}`)
     
     // Sometimes APIs return 404 for "not found", we shouldn't fail the whole check if it's just a normal not found.
     // However, LeakCheck public API returns success: false for not found. We'll handle it below.

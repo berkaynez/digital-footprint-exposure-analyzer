@@ -9,12 +9,14 @@ const analyzeRouter = require('./routes/analyze')
 function createApp() {
   const app = express()
 
-  app.use(express.json())
+  app.use(express.json({ limit: '100kb' }))
 
   const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
+    'https://digital-footprint-exposure-analyzer.vercel.app',
     process.env.FRONTEND_ORIGIN,
+    process.env.FRONTEND_URL,
   ].filter(Boolean)
 
   app.use(
@@ -24,9 +26,8 @@ function createApp() {
         if (!origin || allowedOrigins.includes(origin) || isVercel) {
           callback(null, true)
         } else {
-          // Do not block hard, just log the unknown origin
-          console.warn(`CORS Warning: Allowing unlisted origin: ${origin}`)
-          callback(null, true)
+          console.warn(`CORS Blocked: ${origin}`)
+          callback(new Error('Not allowed by CORS'))
         }
       },
       credentials: true,
@@ -39,9 +40,9 @@ function createApp() {
 
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    max: 30, // Limit each IP to 30 requests per window
+    standardHeaders: true,
+    legacyHeaders: false,
   })
 
   app.use('/api/health', healthRouter)

@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 async function checkX(username) {
   // 1. Validate username format
   // X limits: 1-15 chars, letters, numbers, underscores
@@ -13,7 +14,7 @@ async function checkX(username) {
   const url = `https://x.com/${encodeURIComponent(username)}`;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',

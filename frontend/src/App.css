@@ -1,8 +1,10 @@
 .container {
+  width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: clamp(16px, 4vw, 40px) clamp(16px, 4vw, 32px);
   text-align: left;
+  box-sizing: border-box;
 }
 
 .header {
@@ -28,9 +30,11 @@
   margin-top: 24px;
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  padding: 24px;
+  padding: clamp(16px, 4vw, 24px);
   background: var(--card-bg);
   box-shadow: var(--shadow);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .cardTitle {
@@ -397,15 +401,15 @@ details.variationsDetails > .detailsContent {
   z-index: 100;
 }
 .navContainer {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
+  gap: 16px;
   width: 100%;
   max-width: 1120px;
-  flex-wrap: wrap;
-  gap: 12px;
 }
 .navLogo {
+  grid-column: 1;
   font-weight: 800;
   font-size: 18px;
   color: var(--text-h);
@@ -416,10 +420,11 @@ details.variationsDetails > .detailsContent {
   gap: 8px;
 }
 .navLinks {
+  grid-column: 2;
   display: flex;
   gap: 16px;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .navLink {
   color: var(--text);
@@ -432,6 +437,7 @@ details.variationsDetails > .detailsContent {
   color: var(--text-h);
 }
 .themeToggle {
+  grid-column: 3;
   background: none;
   border: 1px solid var(--card-border);
   color: var(--text-h);
@@ -443,6 +449,33 @@ details.variationsDetails > .detailsContent {
 }
 .themeToggle:hover {
   background: var(--badge-bg);
+}
+
+@media (max-width: 768px) {
+  .navContainer {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+  .navLogo {
+    grid-column: 1;
+  }
+  .themeToggle {
+    grid-column: 2;
+  }
+  .navLinks {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+    overflow-x: auto;
+    width: 100%;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .navLink {
+    white-space: nowrap;
+  }
 }
 
 /* Trust Badges */
@@ -731,6 +764,20 @@ details.variationsDetails > .detailsContent {
   gap: 16px;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+@media (max-width: 480px) {
+  .heroButtons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .heroButtonPrimary,
+  .heroButtonSecondary {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
 }
 .heroButtonPrimary {
   padding: 14px 28px;
@@ -762,13 +809,17 @@ details.variationsDetails > .detailsContent {
 }
 
 .scanFormWrapper {
+  width: 100%;
   max-width: 640px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .result {
+  width: 100%;
   max-width: 920px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .scanSummaryCard {
@@ -782,6 +833,8 @@ details.variationsDetails > .detailsContent {
   margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .scanSummaryInfo {
   display: flex;
@@ -800,6 +853,13 @@ details.variationsDetails > .detailsContent {
   font-size: 15px;
   color: var(--text-h);
   font-weight: 500;
+  word-break: break-all;
+}
+.scanSummaryActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 .btnNewScan {
   background: var(--card-bg);
@@ -815,6 +875,23 @@ details.variationsDetails > .detailsContent {
 }
 .btnNewScan:hover {
   background: var(--border);
+}
+
+@media (max-width: 600px) {
+  .scanSummaryCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .scanSummaryActions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btnNewScan {
+    width: 100%;
+    text-align: center;
+    white-space: normal;
+  }
 }
 
 .recommendationHeader {

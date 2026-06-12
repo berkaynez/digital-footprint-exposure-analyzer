@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 async function checkSteam(username) {
   // 1. Validate username format
   // Steam custom URLs are generally 2-64 chars, alphanumeric, underscore, hyphen
@@ -13,7 +14,7 @@ async function checkSteam(username) {
   const url = `https://steamcommunity.com/id/${encodeURIComponent(username)}`;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',

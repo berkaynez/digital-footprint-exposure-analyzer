@@ -78,12 +78,24 @@
   --alert-low-text: #e2e8f0;
 }
 
-body {
+html, body {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
 }
 
 #root {
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   min-height: 100svh;
   display: flex;
   flex-direction: column;

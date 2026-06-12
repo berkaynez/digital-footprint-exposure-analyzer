@@ -155,6 +155,7 @@ function App() {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [scanMode, setScanMode] = useState('full')
+  const [scanAcknowledgement, setScanAcknowledgement] = useState(false)
   const [view, setView] = useState('home')
   const [analysisStatus, setAnalysisStatus] = useState({ state: 'idle' })
   const [formError, setFormError] = useState('')
@@ -205,6 +206,11 @@ function App() {
     e.preventDefault()
     setFormError('')
 
+    if (!scanAcknowledgement) {
+      setFormError('Please confirm the acknowledgement before starting the scan.')
+      return
+    }
+
     const trimmedEmail = email.trim()
     const trimmedUsername = username.trim()
 
@@ -243,6 +249,7 @@ function App() {
     setEmail('')
     setUsername('')
     setScanMode('full')
+    setScanAcknowledgement(false)
     setFormError('')
     setAnalysisStatus({ state: 'idle' })
     navigate('scan')
@@ -294,10 +301,10 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
             <a href="#privacy" className="navLink" onClick={(e) => { e.preventDefault(); navigate('privacy') }}>Privacy</a>
             <a href="#about" className="navLink" onClick={(e) => { e.preventDefault(); navigate('about') }}>About</a>
             <a href="#scan" className="navLink" onClick={(e) => { e.preventDefault(); navigate('scan') }} style={{ fontWeight: 600, color: 'var(--accent)' }}>New Scan</a>
-            <button className="themeToggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-              {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
-            </button>
           </div>
+          <button className="themeToggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+          </button>
         </div>
       </nav>
 
@@ -347,7 +354,7 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
               <div className="stepCard">
                 <div className="stepNumber">1</div>
                 <h3 className="stepTitle">Identity Analysis</h3>
-                <p className="stepDesc">Submit a username and email to initiate a silent footprinting scan across public endpoints.</p>
+                <p className="stepDesc">Submit a username and email to initiate a metadata-only exposure scan across public endpoints.</p>
               </div>
               <div className="stepCard">
                 <div className="stepNumber">2</div>
@@ -357,7 +364,7 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
               <div className="stepCard">
                 <div className="stepNumber">3</div>
                 <h3 className="stepTitle">Risk Assessment</h3>
-                <p className="stepDesc">A weighted algorithm calculates distinct Email and Username Exposure scores to formulate a final threat level.</p>
+                <p className="stepDesc">A weighted algorithm calculates distinct Email and Username Exposure scores to formulate a final risk level.</p>
               </div>
             </div>
           </section>
@@ -444,11 +451,16 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
                   </label>
                 )}
 
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '20px 0', textAlign: 'left', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={scanAcknowledgement} onChange={(e) => setScanAcknowledgement(e.target.checked)} required style={{ marginTop: '4px' }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text)', lineHeight: '1.4' }}>I understand that PersonaWatch performs a metadata-only exposure analysis and that I should only scan identifiers I own or am authorized to check.</span>
+                </label>
+
                 <button className="button" type="submit">
                   Submit
                 </button>
                 {formError && <p style={{ color: 'var(--color-error)', fontSize: '14px', marginTop: '12px', textAlign: 'center' }}>{formError}</p>}
-                <p style={{ fontSize: '13px', opacity: 0.7, textAlign: 'center', marginTop: '16px', color: 'var(--text)' }}>We do not display leaked passwords. Results are based on public metadata.</p>
+                <p style={{ fontSize: '13px', opacity: 0.7, textAlign: 'center', marginTop: '16px', color: 'var(--text)' }}>PersonaWatch does not prove account ownership and should not be used for harassment, stalking, or unauthorized profiling.</p>
               </form>
 
               <div className="trustBadges">
@@ -516,7 +528,7 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
                           {analysisStatus.data.mode !== 'email' && username}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div className="scanSummaryActions">
                         {pdfError && <span style={{ color: 'var(--alert-high-text)', fontSize: '12px' }}>Export Error</span>}
                         <button onClick={handleDownloadReport} className="btnNewScan downloadReportBtn" style={{ background: 'var(--bg-body)', color: 'var(--text)', border: '1px solid var(--border)' }}>
                           Download Report
@@ -867,7 +879,7 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
                 <p>Social platform matches are weighted by their technical reliability to prevent false positives from generic platform endpoints:</p>
                 <ul style={{ paddingLeft: '24px', margin: '16px 0', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <li><strong style={{ color: 'var(--text-h)' }}>Verified Providers (1.0)</strong>: Direct API integrations with definitive responses (e.g., GitHub, GitLab).</li>
-                  <li><strong style={{ color: 'var(--text-h)' }}>Public Signals (0.4)</strong>: Heuristic scraping where HTTP redirects are used.</li>
+                  <li><strong style={{ color: 'var(--text-h)' }}>Public Signals (0.4)</strong>: Heuristic public signal checks where HTTP redirects are used.</li>
                   <li><strong style={{ color: 'var(--text-h)' }}>Restricted Signals (0.25)</strong>: Platforms with anti-bot mechanisms where verification is highly uncertain.</li>
                 </ul>
               </div>
@@ -879,7 +891,7 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
 
               <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
                 <h3 className="cardTitle">4. Privacy Boundaries</h3>
-                <p style={{ fontSize: '14px' }}>No user-authenticated OAuth flows are used to check signals. The methodology exclusively relies on scraping public URL patterns and referencing historically public breach records without persisting the results.</p>
+                <p style={{ fontSize: '14px' }}>No user-authenticated OAuth flows are used to check signals. The methodology exclusively relies on checking public URL patterns and referencing historically public breach records without persisting the results.</p>
               </div>
             </div>
           </section>
@@ -912,6 +924,21 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
                 <p style={{ fontSize: '14px', lineHeight: '1.6' }}>External APIs may be queried to verify breach exposure and platform visibility.</p>
               </div>
             </div>
+
+            <header style={{ marginBottom: '24px', marginTop: '48px', textAlign: 'center' }}>
+              <h2 className="title" style={{ fontSize: '28px', marginBottom: '8px' }}>Privacy Notice</h2>
+            </header>
+            <div className="card" style={{ textAlign: 'left', lineHeight: '1.6', fontSize: '14px', color: 'var(--text)' }}>
+              <p style={{ marginBottom: '12px' }}>PersonaWatch processes the submitted email and/or username only for generating the selected scan result.</p>
+              <ul style={{ paddingLeft: '20px', marginBottom: '12px' }}>
+                <li style={{ marginBottom: '6px' }}>PersonaWatch does not collect passwords.</li>
+                <li style={{ marginBottom: '6px' }}>PersonaWatch does not display leaked passwords.</li>
+                <li style={{ marginBottom: '6px' }}>PersonaWatch does not store scan history.</li>
+                <li style={{ marginBottom: '6px' }}>PersonaWatch does not create user accounts.</li>
+              </ul>
+              <p style={{ marginBottom: '12px' }}>Analysis is metadata-only. Third-party APIs and public endpoints may be queried to verify breach exposure and platform visibility. Results are generated strictly for awareness and academic research purposes.</p>
+              <p>Users should only scan their own identifiers or identifiers they are authorized to check.</p>
+            </div>
           </section>
         </main>
       )}
@@ -924,7 +951,7 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
               <p className="subtitle" style={{ fontSize: '18px', maxWidth: '700px', margin: '0 auto', lineHeight: '1.5' }}>A digital exposure intelligence platform developed as an academic research prototype.</p>
             </header>
             
-            <div className="dashboardStack" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            <div className="dashboardStack">
               <div className="card" style={{ marginTop: '0', textAlign: 'left' }}>
                 <h3 className="cardTitle">Research purpose</h3>
                 <p style={{ fontSize: '14px', lineHeight: '1.6' }}>PersonaWatch explores how breach intelligence and public account signals can be combined to measure digital exposure.</p>

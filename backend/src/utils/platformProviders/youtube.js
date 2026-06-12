@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 // YouTube is a verified provider only when API key is configured.
 // If not configured, it is skipped safely.
 async function checkYouTubeHandle(username) {
@@ -19,7 +20,7 @@ async function checkYouTubeHandle(username) {
 
   try {
     const url = `https://www.googleapis.com/youtube/v3/channels?part=id,snippet&forHandle=@${encodeURIComponent(cleanUsername)}&key=${process.env.YOUTUBE_API_KEY}`;
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',

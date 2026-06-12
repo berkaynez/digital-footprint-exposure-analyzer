@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 async function checkGitLabUsername(username) {
   // 1. Validate GitLab username format simply
   if (
@@ -10,7 +11,7 @@ async function checkGitLabUsername(username) {
 
   // 2. Call GitLab API
   try {
-    const response = await fetch(`https://gitlab.com/api/v4/users?username=${encodeURIComponent(username)}`, {
+    const response = await fetchWithTimeout(`https://gitlab.com/api/v4/users?username=${encodeURIComponent(username)}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',

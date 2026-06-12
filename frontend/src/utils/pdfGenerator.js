@@ -303,6 +303,7 @@ export function generatePDFReport(data) {
   }
   addTextLine(formula, 10, true);
   addTextLine('Provider weights distinguish verified API matches from public visibility signals.', 10, false, [100, 116, 139]);
+  addTextLine('This report is based on public exposure signals and historical breach intelligence. It does not prove account ownership.', 10, false, [100, 116, 139]);
   yPos += 15;
 
   // --- ADD PAGINATION & FOOTER ---

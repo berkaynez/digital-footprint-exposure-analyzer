@@ -1,3 +1,4 @@
+const { fetchWithTimeout } = require('../fetchWithTimeout');
 async function checkRedditUsername(username) {
   // Validate username locally first
   if (
@@ -9,7 +10,7 @@ async function checkRedditUsername(username) {
   }
 
   try {
-    const response = await fetch(`https://www.reddit.com/user/${encodeURIComponent(username)}/about.json`, {
+    const response = await fetchWithTimeout(`https://www.reddit.com/user/${encodeURIComponent(username)}/about.json`, {
       method: 'GET',
       headers: {
         'User-Agent': 'FootprintGuard/1.0',
