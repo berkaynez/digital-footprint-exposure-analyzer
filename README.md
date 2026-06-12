@@ -115,6 +115,6 @@ PersonaWatch is built on privacy-by-design principles:
 
 This report and platform are based on public exposure signals and historical breach intelligence. PersonaWatch does not prove definitive account ownership and should not be used for harassment, stalking, or unauthorized profiling.
 
-## License / Academic Use
+## License
 
-PersonaWatch is provided as an academic research prototype.
+All Rights Reserved. This repository is published for academic review and portfolio purposes only. No permission is granted for commercial use, redistribution, or derivative works without written authorization from the author.
