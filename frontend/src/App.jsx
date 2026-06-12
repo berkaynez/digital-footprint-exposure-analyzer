@@ -4,6 +4,7 @@ import logoLight from './assets/personawatch-logo-black.png'
 import monogramDark from './assets/pw-monogram.png'
 import monogramLight from './assets/pw-monogram-black.png'
 import './App.css'
+import { generatePDFReport } from './utils/pdfGenerator'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5053'
 
@@ -20,21 +21,146 @@ const getBannerInfo = (score) => {
   return { label: '⚠️ Immediate action recommended', cls: 'alertBanner--high' }
 }
 
-const getInsightText = (score) => {
-  if (score >= 80) return "This profile shows a critical digital exposure level. Email breach history combined with username reuse may increase account correlation and targeted attack risk.";
-  if (score >= 60) return "This profile shows a high digital exposure level. Review exposed accounts and reduce username reuse across platforms.";
-  if (score >= 30) return "This profile shows a moderate exposure level. Some public signals were detected, but immediate critical exposure is limited.";
-  return "This profile shows a low exposure level based on available public signals.";
+const getInsightText = (score, mode = 'full') => {
+  const riskLevel = score >= 80 ? 'critical' : score >= 60 ? 'high' : score >= 30 ? 'moderate' : 'low';
+  if (mode === 'email') return `This email shows a ${riskLevel} exposure level based on public breach intelligence and exposed data categories.`;
+  if (mode === 'username') return `This username shows a ${riskLevel} exposure level based on public platform visibility and reuse patterns.`;
+  return `This profile shows a ${riskLevel} digital exposure level based on breach history and username visibility.`;
 }
+
+const useAnimatedNumber = (endValue, duration = 1000) => {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 4);
+      setValue(Math.floor(ease * endValue));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [endValue, duration]);
+
+  return value;
+};
+
+const ProgressBar = ({ label, score }) => {
+  const animatedScore = useAnimatedNumber(score);
+  const [fill, setFill] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setFill(score), 50);
+    return () => clearTimeout(timer);
+  }, [score]);
+
+  return (
+    <div style={{ marginBottom: '20px', width: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: 'var(--text-h)' }}>
+        <span>{label}</span>
+        <span>{animatedScore}/100</span>
+      </div>
+      <div style={{ height: '8px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${fill}%`,
+            background: 'var(--accent)',
+            transition: 'width 1s cubic-bezier(0.25, 1, 0.5, 1)'
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+const RiskGauge = ({ score }) => {
+  const animatedScore = useAnimatedNumber(score);
+  const [fill, setFill] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setFill(score), 50);
+    return () => clearTimeout(timer);
+  }, [score]);
+
+  let label = 'Minimal';
+  let color = '#3b82f6';
+  if (score >= 25 && score <= 49) { label = 'Low'; color = '#10b981'; }
+  else if (score >= 50 && score <= 69) { label = 'Moderate'; color = '#f59e0b'; }
+  else if (score >= 70 && score <= 84) { label = 'High'; color = '#ea580c'; }
+  else if (score >= 85) { label = 'Critical'; color = '#dc2626'; }
+
+  const radius = 40;
+  const circumference = Math.PI * radius;
+  const strokeDashoffset = circumference - (fill / 100) * circumference;
+
+  return (
+    <div style={{ textAlign: 'center', margin: '32px 0 24px 0', position: 'relative' }}>
+      <svg viewBox="0 0 100 50" style={{ width: '220px', height: '110px', overflow: 'visible', margin: '0 auto' }}>
+        <path
+          d="M 10 50 A 40 40 0 0 1 90 50"
+          fill="none"
+          stroke="var(--border)"
+          strokeWidth="10"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 10 50 A 40 40 0 0 1 90 50"
+          fill="none"
+          stroke={color}
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.25, 1, 0.5, 1)' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', bottom: '-15px', left: '0', right: '0', textAlign: 'center' }}>
+        <div style={{ fontSize: '42px', fontWeight: '800', color: 'var(--text-h)', lineHeight: '1' }}>
+          {animatedScore}
+        </div>
+        <div style={{ fontSize: '14px', fontWeight: '700', color: color, textTransform: 'uppercase', letterSpacing: '1px', marginTop: '8px' }}>
+          {label} Risk
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ScoreLegend = () => {
+  const bands = [
+    { label: 'Minimal Risk', color: '#3b82f6' },
+    { label: 'Low Risk', color: '#10b981' },
+    { label: 'Moderate Risk', color: '#f59e0b' },
+    { label: 'High Risk', color: '#ea580c' },
+    { label: 'Critical Risk', color: '#dc2626' }
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)', fontSize: '13px' }}>
+      {bands.map(b => (
+        <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: b.color }} />
+          <span style={{ color: 'var(--text)', fontWeight: '600' }}>{b.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 function App() {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
+  const [scanMode, setScanMode] = useState('full')
   const [view, setView] = useState('home')
   const [analysisStatus, setAnalysisStatus] = useState({ state: 'idle' })
   const [formError, setFormError] = useState('')
   const [copyText, setCopyText] = useState('Copy summary')
   const [showAllSources, setShowAllSources] = useState(false)
+  const [pdfError, setPdfError] = useState('')
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme')
     if (saved) return saved
@@ -50,6 +176,17 @@ function App() {
     // Fire-and-forget health check to wake up the backend (e.g. Render free tier)
     fetch(`${API_BASE_URL}/api/health`).catch(() => {})
   }, [])
+
+  const handleDownloadReport = () => {
+    try {
+      setPdfError('')
+      generatePDFReport(analysisStatus.data)
+    } catch (err) {
+      setPdfError(err.message || String(err))
+      console.error('PDF export failed:', err)
+      alert(`PDF export failed: ${err.message || String(err)}`)
+    }
+  }
 
   const toPercent = (score) => `${Math.round(Number(score) * 100)}%`
 
@@ -71,11 +208,11 @@ function App() {
     const trimmedEmail = email.trim()
     const trimmedUsername = username.trim()
 
-    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    if ((scanMode === 'full' || scanMode === 'email') && (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail))) {
       setFormError('Please enter a valid email address.')
       return
     }
-    if (!trimmedUsername) {
+    if ((scanMode === 'full' || scanMode === 'username') && !trimmedUsername) {
       setFormError('Please enter a username.')
       return
     }
@@ -88,7 +225,7 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: trimmedEmail, username: trimmedUsername }),
+        body: JSON.stringify({ email: trimmedEmail, username: trimmedUsername, mode: scanMode }),
       })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -105,6 +242,7 @@ function App() {
   const handleNewScan = () => {
     setEmail('')
     setUsername('')
+    setScanMode('full')
     setFormError('')
     setAnalysisStatus({ state: 'idle' })
     navigate('scan')
@@ -128,16 +266,10 @@ function App() {
 
       const textBlob = `Digital Footprint Summary
 -------------------------
-Email: ${data.email}
-Username: ${data.username}
-Digital Exposure Score: ${summary.digitalExposureScore}
+Scan Scope: ${data.mode === 'email' ? 'Email Exposure Scan' : data.mode === 'username' ? 'Username Exposure Scan' : 'Full Scan'}
+${data.mode !== 'username' ? `Email: ${data.email}\n` : ''}${data.mode !== 'email' ? `Username: ${data.username}\n` : ''}Digital Exposure Score: ${summary.digitalExposureScore}
 Risk Level: ${riskBadge.label}
-Email Exposure Score: ${summary.emailExposureScore}
-Username Exposure Score: ${summary.usernameExposureScore}
-Email Breach Details: ${emailExpText}
-Verified Matches: ${summary.verifiedMatchCount}
-Public Signals: ${summary.publicSignalMatchCount}
-Original Username Matches: ${originalMatchesText}`;
+${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mode === 'username' ? 'Overall Exposure = Username Exposure Score\n' : 'Overall Exposure = 55% Email + 45% Username\n'}${data.mode !== 'username' ? `Email Exposure Score: ${summary.emailExposureScore}\nEmail Breach Details: ${emailExpText}\n` : ''}${data.mode !== 'email' ? `Username Exposure Score: ${summary.usernameExposureScore}\nVerified Matches: ${summary.verifiedMatchCount}\nPublic Signals: ${summary.publicSignalMatchCount}\nOriginal Username Matches: ${originalMatchesText}` : ''}`.trim();
 
       await navigator.clipboard.writeText(textBlob);
       setCopyText('Copied');
@@ -253,37 +385,64 @@ Original Username Matches: ${originalMatchesText}`;
           <section className="scanFormWrapper">
             <header className="header" style={{ textAlign: 'center', marginBottom: '24px' }}>
               <h2 className="title" style={{ fontSize: '24px' }}>Run a footprint scan</h2>
-              <p className="subtitle" style={{ fontSize: '15px' }}>Enter an email and username to generate a real-time exposure summary.</p>
+              <p className="subtitle" style={{ fontSize: '15px' }}>Select a scan mode to generate a real-time exposure summary.</p>
             </header>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+              <div 
+                onClick={() => setScanMode('full')}
+                style={{ padding: '16px', border: `2px solid ${scanMode === 'full' ? 'var(--accent)' : 'var(--card-border)'}`, borderRadius: '8px', cursor: 'pointer', background: 'var(--card-bg)' }}>
+                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--text-h)' }}>Full Scan</h4>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text)' }}>Comprehensive exposure analysis.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                <div 
+                  onClick={() => setScanMode('email')}
+                  style={{ padding: '16px', border: `2px solid ${scanMode === 'email' ? 'var(--accent)' : 'var(--card-border)'}`, borderRadius: '8px', cursor: 'pointer', background: 'var(--card-bg)' }}>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--text-h)' }}>Email Exposure</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text)' }}>Analyze known breach exposure.</p>
+                </div>
+                <div 
+                  onClick={() => setScanMode('username')}
+                  style={{ padding: '16px', border: `2px solid ${scanMode === 'username' ? 'var(--accent)' : 'var(--card-border)'}`, borderRadius: '8px', cursor: 'pointer', background: 'var(--card-bg)' }}>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--text-h)' }}>Username Exposure</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text)' }}>Analyze public username reuse and visibility.</p>
+                </div>
+              </div>
+            </div>
 
             <div className="card">
               <form className="form" onSubmit={onSubmit}>
-                <label className="field">
-                  <span className="labelText">Email</span>
-                  <input
-                    className="input"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </label>
+                {scanMode !== 'username' && (
+                  <label className="field">
+                    <span className="labelText">Email</span>
+                    <input
+                      className="input"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </label>
+                )}
 
-                <label className="field">
-                  <span className="labelText">Username</span>
-                  <input
-                    className="input"
-                    type="text"
-                    autoComplete="username"
-                    placeholder="your_username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
-                </label>
+                {scanMode !== 'email' && (
+                  <label className="field">
+                    <span className="labelText">Username</span>
+                    <input
+                      className="input"
+                      type="text"
+                      autoComplete="username"
+                      placeholder="your_username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </label>
+                )}
 
                 <button className="button" type="submit">
                   Submit
@@ -308,11 +467,31 @@ Original Username Matches: ${originalMatchesText}`;
             {analysisStatus.state === 'loading' && (
               <div className="loadingCard">
                 <div className="spinner"></div>
-                <h3 className="title" style={{ fontSize: '20px' }}>Scanning public exposure signals...</h3>
+                <h3 className="title" style={{ fontSize: '20px' }}>
+                  {scanMode === 'full' ? 'Scanning public exposure signals...' : scanMode === 'email' ? 'Scanning email breach exposure...' : 'Scanning username visibility...'}
+                </h3>
                 <div className="loadingSteps">
-                  <div className="loadingStep"><span>🔍</span> Checking email exposure</div>
-                  <div className="loadingStep"><span>👤</span> Analyzing username reuse</div>
-                  <div className="loadingStep"><span>📊</span> Preparing recommendations</div>
+                  {scanMode === 'full' && (
+                    <>
+                      <div className="loadingStep"><span>🔍</span> Checking email exposure</div>
+                      <div className="loadingStep"><span>👤</span> Analyzing username reuse</div>
+                      <div className="loadingStep"><span>📊</span> Preparing recommendations</div>
+                    </>
+                  )}
+                  {scanMode === 'email' && (
+                    <>
+                      <div className="loadingStep"><span>🔍</span> Checking breach exposure</div>
+                      <div className="loadingStep"><span>📋</span> Evaluating exposed data fields</div>
+                      <div className="loadingStep"><span>🛡️</span> Preparing email security recommendations</div>
+                    </>
+                  )}
+                  {scanMode === 'username' && (
+                    <>
+                      <div className="loadingStep"><span>📡</span> Checking public platform signals</div>
+                      <div className="loadingStep"><span>👤</span> Analyzing username variations</div>
+                      <div className="loadingStep"><span>📊</span> Preparing visibility recommendations</div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -330,12 +509,18 @@ Original Username Matches: ${originalMatchesText}`;
                   <>
                     <div className="scanSummaryCard">
                       <div className="scanSummaryInfo">
-                        <span className="scanSummaryLabel">Scan Summary</span>
+                        <span className="scanSummaryLabel">Scan Summary ({analysisStatus.data.mode === 'email' ? 'Email Exposure Scan' : analysisStatus.data.mode === 'username' ? 'Username Exposure Scan' : 'Full Scan'})</span>
                         <div className="scanSummaryValues">
-                          {email} <span style={{ opacity: 0.5, margin: '0 6px' }}>•</span> {username}
+                          {analysisStatus.data.mode !== 'username' && email}
+                          {analysisStatus.data.mode === 'full' && <span style={{ opacity: 0.5, margin: '0 6px' }}>•</span>}
+                          {analysisStatus.data.mode !== 'email' && username}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {pdfError && <span style={{ color: 'var(--alert-high-text)', fontSize: '12px' }}>Export Error</span>}
+                        <button onClick={handleDownloadReport} className="btnNewScan downloadReportBtn" style={{ background: 'var(--bg-body)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+                          Download Report
+                        </button>
                         <button onClick={handleCopySummary} className="btnNewScan" style={{ background: 'var(--bg-body)', color: 'var(--text)', border: '1px solid var(--border)' }}>
                           {copyText}
                         </button>
@@ -369,113 +554,124 @@ Original Username Matches: ${originalMatchesText}`;
                               <div className="progressBarFill" style={{ width: `${analysisStatus.data.summary.digitalExposureScore}%`, background: progressColor }}></div>
                             </div>
                             <p style={{ margin: '16px auto 0', maxWidth: '400px', fontSize: '0.95em', lineHeight: 1.5, opacity: 0.85 }}>
-                              {getInsightText(analysisStatus.data.summary.digitalExposureScore)}
+                              {getInsightText(analysisStatus.data.summary.digitalExposureScore, analysisStatus.data.mode)}
                             </p>
                           </>
                         )
                       })()}
                     </div>
 
-                    <div className="dashboardStack">
-
-                      <div className="dashboardCard">
-                        <h4 className="sectionTitle">Email Exposure</h4>
-                        <dl className="kv">
-                          <div className="kvRow">
-                            <dt>Email Score</dt>
-                            <dd>{analysisStatus.data.summary.emailExposureScore}/100</dd>
-                          </div>
-                          <div className="kvRow" style={{ gridTemplateColumns: '1fr', padding: 0 }}>
-                            <dd>
-                              {analysisStatus.data.emailExposure ? (
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <span style={{ marginBottom: '6px' }}>
-                                    {analysisStatus.data.emailExposure.error ? (
-                                      'Check unavailable'
-                                    ) : analysisStatus.data.emailExposure.found ? (
-                                      <span style={{ color: 'var(--color-error)' }}>{analysisStatus.data.emailExposure.breachCount} breaches found</span>
-                                    ) : (
-                                      <span style={{ color: 'var(--color-success)' }}>0 breaches found</span>
+                                <div className="dashboardStack" style={analysisStatus.data.mode !== 'full' ? { gridTemplateColumns: '1fr' } : {}}>
+                        {analysisStatus.data.mode !== 'username' && (
+                          <div className="dashboardCard">
+                          <h4 className="sectionTitle">Email Exposure</h4>
+                          <dl className="kv">
+                            <div className="kvRow">
+                              <dt>Email Score</dt>
+                              <dd>{analysisStatus.data.summary.emailExposureScore}/100</dd>
+                            </div>
+                            <div className="kvRow" style={{ gridTemplateColumns: '1fr', padding: 0 }}>
+                              <dd>
+                                {analysisStatus.data.emailExposure ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ marginBottom: '6px' }}>
+                                      {analysisStatus.data.emailExposure.error ? (
+                                        'Check unavailable'
+                                      ) : analysisStatus.data.emailExposure.found ? (
+                                        <span style={{ color: 'var(--color-error)' }}>{analysisStatus.data.emailExposure.breachCount} breaches found</span>
+                                      ) : (
+                                        <span style={{ color: 'var(--color-success)' }}>0 breaches found</span>
+                                      )}
+                                    </span>
+                                    {analysisStatus.data.emailExposure.sources?.length > 0 && (
+                                      <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
+                                        Sources:{' '}
+                                        {(() => {
+                                          const sources = analysisStatus.data.emailExposure.sources;
+                                          const visibleSources = showAllSources ? sources : sources.slice(0, 5);
+                                          const hiddenCount = sources.length - 5;
+                                          return (
+                                            <>
+                                              {visibleSources.map(s => `${s.name} (${s.date || 'unknown'})`).join(', ')}
+                                              {hiddenCount > 0 && (
+                                                <button 
+                                                  type="button"
+                                                  onClick={() => setShowAllSources(!showAllSources)}
+                                                  style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', padding: 0, marginLeft: '4px', textDecoration: 'underline', fontSize: 'inherit' }}
+                                                >
+                                                  {showAllSources ? 'Show less' : `Show ${hiddenCount} more`}
+                                                </button>
+                                              )}
+                                            </>
+                                          );
+                                        })()}
+                                      </span>
                                     )}
-                                  </span>
-                                  {analysisStatus.data.emailExposure.sources?.length > 0 && (
-                                    <span style={{ fontSize: '0.9em', marginTop: '4px' }}>
-                                      Sources:{' '}
-                                      {(() => {
-                                        const sources = analysisStatus.data.emailExposure.sources;
-                                        const visibleSources = showAllSources ? sources : sources.slice(0, 5);
-                                        const hiddenCount = sources.length - 5;
-                                        return (
-                                          <>
-                                            {visibleSources.map(s => `${s.name} (${s.date || 'unknown'})`).join(', ')}
-                                            {hiddenCount > 0 && (
-                                              <button 
-                                                type="button"
-                                                onClick={() => setShowAllSources(!showAllSources)}
-                                                style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', padding: 0, marginLeft: '4px', textDecoration: 'underline', fontSize: 'inherit' }}
-                                              >
-                                                {showAllSources ? 'Show less' : `Show ${hiddenCount} more`}
-                                              </button>
-                                            )}
-                                          </>
-                                        );
-                                      })()}
-                                    </span>
-                                  )}
-                                  {analysisStatus.data.emailExposure.exposedFields?.length > 0 && (
-                                    <span style={{ fontSize: '0.9em', marginTop: '6px' }}>
-                                      Exposed data: {analysisStatus.data.emailExposure.exposedFields.map(f => f.toLowerCase() === 'password' ? 'credentials' : f).join(', ')}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : 'Pending...'}
-                            </dd>
-                          </div>
-                        </dl>
-                      </div>
+                                    {analysisStatus.data.emailExposure.exposedFields?.length > 0 && (
+                                      <span style={{ fontSize: '0.9em', marginTop: '6px' }}>
+                                        Exposed data: {analysisStatus.data.emailExposure.exposedFields.map(f => f.toLowerCase() === 'password' ? 'credentials' : f).join(', ')}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : 'Pending...'}
+                              </dd>
+                            </div>
+                          </dl>
+                        </div>
+                      )}
 
-                      <div className="dashboardCard">
-                        <h4 className="sectionTitle">Username Intelligence</h4>
-                        <dl className="kv">
-                          <div className="kvRow">
-                            <dt>Username Score</dt>
-                            <dd>{analysisStatus.data.summary.usernameExposureScore}/100</dd>
-                          </div>
-                          <div className="kvRow">
-                            <dt>Verified Matches</dt>
-                            <dd>{analysisStatus.data.summary.verifiedMatchCount}</dd>
-                          </div>
-                          <div className="kvRow">
-                            <dt>Public Signals</dt>
-                            <dd>{analysisStatus.data.summary.publicSignalMatchCount}</dd>
-                          </div>
-                          <div className="kvRow">
-                            <dt>Variations</dt>
-                            <dd style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                              <span className="badge badge--high">{analysisStatus.data.summary.highRiskCount} Close</span>
-                              <span className="badge badge--medium">{analysisStatus.data.summary.mediumRiskCount} Partial</span>
-                              <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} Weak</span>
-                            </dd>
-                          </div>
-                        </dl>
-                      </div>
+                      {analysisStatus.data.mode !== 'email' && (
+                        <div className="dashboardCard">
+                          <h4 className="sectionTitle">Username Intelligence</h4>
+                          <dl className="kv">
+                            <div className="kvRow">
+                              <dt>Username Score</dt>
+                              <dd>{analysisStatus.data.summary.usernameExposureScore}/100</dd>
+                            </div>
+                            <div className="kvRow">
+                              <dt>Verified Matches</dt>
+                              <dd>{analysisStatus.data.summary.verifiedMatchCount}</dd>
+                            </div>
+                            <div className="kvRow">
+                              <dt>Public Signals</dt>
+                              <dd>{analysisStatus.data.summary.publicSignalMatchCount}</dd>
+                            </div>
+                            <div className="kvRow">
+                              <dt>Variations</dt>
+                              <dd style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                <span className="badge badge--high">{analysisStatus.data.summary.highRiskCount} Close</span>
+                                <span className="badge badge--medium">{analysisStatus.data.summary.mediumRiskCount} Partial</span>
+                                <span className="badge badge--low">{analysisStatus.data.summary.lowRiskCount} Weak</span>
+                              </dd>
+                            </div>
+                          </dl>
+                        </div>
+                      )}
 
                       <div className="dashboardCard" style={{ gridColumn: '1 / -1', background: 'var(--bg-card)', border: '1px dashed var(--border)' }}>
                         <h4 className="sectionTitle">Why This Score?</h4>
-                        <p style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--color-secondary)' }}>The Digital Exposure Score mathematically blends your raw exposure levels across two key vectors.</p>
-                        <dl className="kv" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                          <div className="kvRow" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <dt style={{ width: '100%' }}>Email Exposure (55%)</dt>
-                            <dd style={{ width: '100%', fontSize: '20px', fontWeight: '700', marginTop: '4px' }}>{analysisStatus.data.summary.emailExposureScore} / 100</dd>
-                          </div>
-                          <div className="kvRow" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <dt style={{ width: '100%' }}>Username Exposure (45%)</dt>
-                            <dd style={{ width: '100%', fontSize: '20px', fontWeight: '700', marginTop: '4px' }}>{analysisStatus.data.summary.usernameExposureScore} / 100</dd>
-                          </div>
-                        </dl>
-                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-                          <span style={{ fontSize: '15px', fontWeight: '600' }}>Overall Exposure: {analysisStatus.data.summary.digitalExposureScore} / 100</span>
+                        <p style={{ fontSize: '14px', marginBottom: '24px', color: 'var(--text)' }}>
+                          {analysisStatus.data.mode === 'full' 
+                            ? 'The Digital Exposure Score mathematically blends your exposure levels across two key vectors.'
+                            : analysisStatus.data.mode === 'email'
+                              ? 'This scan uses only the Email Exposure Score because username analysis was not selected.'
+                              : 'This scan uses only the Username Exposure Score because email analysis was not selected.'}
+                        </p>
+                        
+                        <RiskGauge score={analysisStatus.data.summary.digitalExposureScore} />
+
+                        {analysisStatus.data.mode !== 'full' && (
+                          <p style={{ fontSize: '14px', fontWeight: '600', marginTop: '24px', textAlign: 'center', color: 'var(--text-h)' }}>
+                            Overall Exposure = {analysisStatus.data.mode === 'email' ? 'Email Exposure Score' : 'Username Exposure Score'}
+                          </p>
+                        )}
+
+                        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
+                          {analysisStatus.data.mode !== 'username' && <ProgressBar label={analysisStatus.data.mode === 'full' ? "Email Exposure (55%)" : "Email Exposure Score"} score={analysisStatus.data.summary.emailExposureScore} />}
+                          {analysisStatus.data.mode !== 'email' && <ProgressBar label={analysisStatus.data.mode === 'full' ? "Username Exposure (45%)" : "Username Exposure Score"} score={analysisStatus.data.summary.usernameExposureScore} />}
                         </div>
+
+                        <ScoreLegend />
                       </div>
 
                     </div>
@@ -514,15 +710,40 @@ Original Username Matches: ${originalMatchesText}`;
                     <h4 className="sectionTitle" style={{ borderBottom: 'none', marginBottom: '8px' }}>Security Journey</h4>
                     <p style={{ fontSize: '14px', color: 'var(--text)', marginBottom: '12px' }}>Next steps to improve your digital security:</p>
                     <ul className="checklist">
-                      <li className="checklistItem"><span className="checkIcon">✔</span> Change exposed passwords</li>
-                      <li className="checklistItem"><span className="checkIcon">✔</span> Enable two-factor authentication (2FA)</li>
-                      <li className="checklistItem"><span className="checkIcon">✔</span> Review reused usernames across platforms</li>
-                      <li className="checklistItem"><span className="checkIcon">✔</span> Monitor future exposure</li>
+                      {analysisStatus.data.mode !== 'username' && (
+                        <>
+                          <li className="checklistItem"><span className="checkIcon">✔</span> Change exposed passwords</li>
+                          <li className="checklistItem"><span className="checkIcon">✔</span> Enable two-factor authentication (2FA)</li>
+                          {analysisStatus.data.mode === 'email' && (
+                            <>
+                              <li className="checklistItem"><span className="checkIcon">✔</span> Review affected services</li>
+                              <li className="checklistItem"><span className="checkIcon">✔</span> Monitor future breach exposure</li>
+                            </>
+                          )}
+                        </>
+                      )}
+                      
+                      {analysisStatus.data.mode !== 'email' && (
+                        <>
+                          <li className="checklistItem"><span className="checkIcon">✔</span> Review reused usernames across platforms</li>
+                          {analysisStatus.data.mode === 'username' && (
+                            <>
+                              <li className="checklistItem"><span className="checkIcon">✔</span> Separate public and private account identifiers</li>
+                              <li className="checklistItem"><span className="checkIcon">✔</span> Reduce public profile discoverability where appropriate</li>
+                              <li className="checklistItem"><span className="checkIcon">✔</span> Monitor public platform visibility</li>
+                            </>
+                          )}
+                        </>
+                      )}
+
+                      {analysisStatus.data.mode === 'full' && (
+                        <li className="checklistItem"><span className="checkIcon">✔</span> Monitor future exposure</li>
+                      )}
                     </ul>
                   </div>
                 )}
 
-                {analysisStatus.state === 'success' && analysisStatus.data?.originalUsernameAnalysis && (
+                {analysisStatus.state === 'success' && analysisStatus.data?.originalUsernameAnalysis && analysisStatus.data.mode !== 'email' && (
                   <div className="dashboardCard" style={{ marginBottom: '1.5rem' }}>
                     <h4 className="sectionTitle" style={{ borderBottom: 'none', marginBottom: '12px' }}>Original Username</h4>
                     {(() => {
@@ -555,7 +776,7 @@ Original Username Matches: ${originalMatchesText}`;
                   </div>
                 )}
 
-                {analysisStatus.state === 'success' && (
+                {analysisStatus.state === 'success' && analysisStatus.data.mode !== 'email' && (
                   <details className="variationsDetails">
                     <summary>
                       <span>Generated Username Variations</span>

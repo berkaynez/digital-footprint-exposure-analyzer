@@ -49,114 +49,122 @@ function getConfidenceWeight(original, variation) {
 // mockPlatformsForUsername removed; simulated indicators removed for final reliability and academic clarity
 
 router.post('/', async (req, res) => {
-  const { email, username } = req.body || {}
+  const { email, username, mode = 'full' } = req.body || {}
 
-  if (typeof email !== 'string' || typeof username !== 'string') {
-    return res.status(400).json({
-      error: 'email and username must be strings',
-    })
+  let trimmedEmail = ''
+  let trimmedUsername = ''
+
+  if (mode === 'full' || mode === 'email') {
+    if (typeof email !== 'string') {
+      return res.status(400).json({ error: 'email must be a string' })
+    }
+    trimmedEmail = email.trim()
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      return res.status(400).json({ error: 'A valid email containing @ is required' })
+    }
   }
 
-  const trimmedEmail = email.trim()
-  const trimmedUsername = username.trim()
-
-  if (!trimmedEmail || !trimmedEmail.includes('@')) {
-    return res.status(400).json({
-      error: 'A valid email containing @ is required',
-    })
+  if (mode === 'full' || mode === 'username') {
+    if (typeof username !== 'string') {
+      return res.status(400).json({ error: 'username must be a string' })
+    }
+    trimmedUsername = username.trim()
+    if (!trimmedUsername || trimmedUsername.length < 3) {
+      return res.status(400).json({ error: 'Username must be at least 3 characters long' })
+    }
   }
 
-  if (!trimmedUsername || trimmedUsername.length < 3) {
-    return res.status(400).json({
-      error: 'Username must be at least 3 characters long',
-    })
-  }
-
-  let variations = generateUsernameVariations(trimmedUsername)
-  variations = variations.filter(v => v.toLowerCase() !== trimmedUsername.toLowerCase())
-
-  const originalGithub = await checkGitHubUsername(trimmedUsername)
-  const originalGitlab = await checkGitLabUsername(trimmedUsername)
-  const originalReddit = await checkRedditUsername(trimmedUsername)
-  const originalYouTube = await checkYouTubeHandle(trimmedUsername)
-  const originalSnapchat = await checkSnapchat(trimmedUsername)
-  const originalInstagram = await checkInstagram(trimmedUsername)
-  const originalTelegram = await checkTelegramUsername(trimmedUsername)
-  const originalX = await checkX(trimmedUsername)
-  const originalSteam = await checkSteam(trimmedUsername)
-  const originalPlatforms = [
-    { name: 'GitHub', ...originalGithub },
-    originalGitlab,
-    originalReddit,
-    originalYouTube,
-    originalSnapchat,
-    originalInstagram,
-    originalTelegram,
-    originalX,
-    originalSteam,
-  ]
+  let originalPlatforms = []
+  let results = []
+  let variations = []
+  let originalUsernameAnalysis = null
 
   let originalVerifiedMatchCount = 0
   let originalSimulatedMatchCount = 0
   let originalPublicSignalMatchCount = 0
-
   let originalRestrictedSignalMatchCount = 0
 
-  originalPlatforms.forEach(p => {
-    if (p.found) {
-      if (p.verified === true) originalVerifiedMatchCount++
-      else if (p.signalType === 'public_signal') originalPublicSignalMatchCount++
-      else if (p.signalType === 'restricted_public_signal') originalRestrictedSignalMatchCount++
-    }
-  })
+  if (mode === 'full' || mode === 'username') {
+    variations = generateUsernameVariations(trimmedUsername)
+    variations = variations.filter(v => v.toLowerCase() !== trimmedUsername.toLowerCase())
 
-  const originalUsernameAnalysis = {
-    username: trimmedUsername,
-    platforms: originalPlatforms,
-    verifiedMatchCount: originalVerifiedMatchCount,
-    publicSignalMatchCount: originalPublicSignalMatchCount,
-    simulatedMatchCount: originalSimulatedMatchCount,
-    confidenceWeight: 1.0
-  }
+    const originalGithub = await checkGitHubUsername(trimmedUsername)
+    const originalGitlab = await checkGitLabUsername(trimmedUsername)
+    const originalReddit = await checkRedditUsername(trimmedUsername)
+    const originalYouTube = await checkYouTubeHandle(trimmedUsername)
+    const originalSnapchat = await checkSnapchat(trimmedUsername)
+    const originalInstagram = await checkInstagram(trimmedUsername)
+    const originalTelegram = await checkTelegramUsername(trimmedUsername)
+    const originalX = await checkX(trimmedUsername)
+    const originalSteam = await checkSteam(trimmedUsername)
+    
+    originalPlatforms = [
+      { name: 'GitHub', ...originalGithub },
+      originalGitlab,
+      originalReddit,
+      originalYouTube,
+      originalSnapchat,
+      originalInstagram,
+      originalTelegram,
+      originalX,
+      originalSteam,
+    ]
 
-  const results = await Promise.all(
-    variations.map(async (variation) => {
-      const score = similarityScore(trimmedUsername, variation)
-
-      const github = await checkGitHubUsername(variation)
-      const gitlab = await checkGitLabUsername(variation)
-      const reddit = await checkRedditUsername(variation)
-      const youtube = await checkYouTubeHandle(variation)
-      const snapchat = await checkSnapchat(variation)
-      const instagram = await checkInstagram(variation)
-      const telegram = await checkTelegramUsername(variation)
-      const xProvider = await checkX(variation)
-      const steam = await checkSteam(variation)
-      
-      const platforms = [
-        // Verified API-based checks
-        { name: 'GitHub', ...github },
-        gitlab,
-        reddit,
-        youtube,
-        snapchat,
-        instagram,
-        telegram,
-        xProvider,
-        steam,
-      ]
-
-      const confidenceWeight = getConfidenceWeight(trimmedUsername, variation)
-
-      return {
-        username: variation,
-        similarity: score,
-        risk: riskFromScore(score),
-        confidenceWeight,
-        platforms,
+    originalPlatforms.forEach(p => {
+      if (p.found) {
+        if (p.verified === true) originalVerifiedMatchCount++
+        else if (p.signalType === 'public_signal') originalPublicSignalMatchCount++
+        else if (p.signalType === 'restricted_public_signal') originalRestrictedSignalMatchCount++
       }
-    }),
-  )
+    })
+
+    originalUsernameAnalysis = {
+      username: trimmedUsername,
+      platforms: originalPlatforms,
+      verifiedMatchCount: originalVerifiedMatchCount,
+      publicSignalMatchCount: originalPublicSignalMatchCount,
+      simulatedMatchCount: originalSimulatedMatchCount,
+      confidenceWeight: 1.0
+    }
+
+    results = await Promise.all(
+      variations.map(async (variation) => {
+        const score = similarityScore(trimmedUsername, variation)
+
+        const github = await checkGitHubUsername(variation)
+        const gitlab = await checkGitLabUsername(variation)
+        const reddit = await checkRedditUsername(variation)
+        const youtube = await checkYouTubeHandle(variation)
+        const snapchat = await checkSnapchat(variation)
+        const instagram = await checkInstagram(variation)
+        const telegram = await checkTelegramUsername(variation)
+        const xProvider = await checkX(variation)
+        const steam = await checkSteam(variation)
+        
+        const platforms = [
+          { name: 'GitHub', ...github },
+          gitlab,
+          reddit,
+          youtube,
+          snapchat,
+          instagram,
+          telegram,
+          xProvider,
+          steam,
+        ]
+
+        const confidenceWeight = getConfidenceWeight(trimmedUsername, variation)
+
+        return {
+          username: variation,
+          similarity: score,
+          risk: riskFromScore(score),
+          confidenceWeight,
+          platforms,
+        }
+      })
+    )
+  }
 
   let highRiskCount = 0
   let mediumRiskCount = 0
@@ -166,95 +174,99 @@ router.post('/', async (req, res) => {
   let publicSignalMatchCount = originalPublicSignalMatchCount
   let restrictedSignalMatchCount = originalRestrictedSignalMatchCount
 
-  // The scoring model is separated into two explicit components for academic defensibility:
-  // 1. Username Exposure (weighted at 45%): Calculated from cross-platform username existence.
-  //    - Verified APIs have higher weights (1.0) compared to public heuristic signals (0.4) to reduce false positives.
-  //    - Generic or truncated variations are penalized to dampen noise.
-  // 2. Email Exposure (weighted at 55%): Based on empirical breach counts and severity of exposed fields.
-  //    - Email breaches are weighted slightly heavier because they represent confirmed compromised personal data.
-
   let weightedUsernameRisk = 0
   const ORIGINAL_BASE = 18
   const VARIATION_BASE = 6
 
-  originalPlatforms.forEach(p => {
-    if (p.found) {
-      weightedUsernameRisk += (getProviderWeight(p) * 1.0 * ORIGINAL_BASE)
-    }
-  })
-
-  results.forEach(r => {
-    let effectiveVariationWeight = r.confidenceWeight;
-
-    // Dampen short/truncated variations to prevent generic username matches from inflating the score
-    if (r.username.length < trimmedUsername.length && effectiveVariationWeight > 0.25) {
-      effectiveVariationWeight = 0.25;
-    }
-    if (r.username.length <= 5 && r.username.length < trimmedUsername.length) {
-      effectiveVariationWeight *= 0.2;
-    }
-
-    if (r.risk === 'high') {
-      highRiskCount++
-    } else if (r.risk === 'medium') {
-      mediumRiskCount++
-    } else if (r.risk === 'low') {
-      lowRiskCount++
-    }
-
-    r.platforms.forEach(p => {
+  if (mode === 'full' || mode === 'username') {
+    originalPlatforms.forEach(p => {
       if (p.found) {
-        if (p.verified === true) {
-          verifiedMatchCount++
-        } else if (p.signalType === 'public_signal') {
-          publicSignalMatchCount++
-        } else if (p.signalType === 'restricted_public_signal') {
-          restrictedSignalMatchCount++
-        }
-        weightedUsernameRisk += (getProviderWeight(p) * effectiveVariationWeight * VARIATION_BASE)
+        weightedUsernameRisk += (getProviderWeight(p) * 1.0 * ORIGINAL_BASE)
       }
     })
-  })
 
-  let usernameExposureScore = Math.min(100, Math.round(weightedUsernameRisk))
-  // Kept for backward compatibility mapping
-  let usernameReuseRiskScore = usernameExposureScore
+    results.forEach(r => {
+      let effectiveVariationWeight = r.confidenceWeight;
 
-  const emailExposure = await checkEmailExposure(trimmedEmail)
+      if (r.username.length < trimmedUsername.length && effectiveVariationWeight > 0.25) {
+        effectiveVariationWeight = 0.25;
+      }
+      if (r.username.length <= 5 && r.username.length < trimmedUsername.length) {
+        effectiveVariationWeight *= 0.2;
+      }
 
-  let breachCountContribution = 0
-  if (emailExposure && emailExposure.breachCount) {
-    const count = emailExposure.breachCount
-    if (count === 1) breachCountContribution = 15
-    else if (count >= 2 && count <= 5) breachCountContribution = 30
-    else if (count >= 6 && count <= 15) breachCountContribution = 45
-    else if (count >= 16) breachCountContribution = 60
+      if (r.risk === 'high') {
+        highRiskCount++
+      } else if (r.risk === 'medium') {
+        mediumRiskCount++
+      } else if (r.risk === 'low') {
+        lowRiskCount++
+      }
+
+      r.platforms.forEach(p => {
+        if (p.found) {
+          if (p.verified === true) {
+            verifiedMatchCount++
+          } else if (p.signalType === 'public_signal') {
+            publicSignalMatchCount++
+          } else if (p.signalType === 'restricted_public_signal') {
+            restrictedSignalMatchCount++
+          }
+          weightedUsernameRisk += (getProviderWeight(p) * effectiveVariationWeight * VARIATION_BASE)
+        }
+      })
+    })
   }
 
+  let usernameExposureScore = Math.min(100, Math.round(weightedUsernameRisk))
+  let usernameReuseRiskScore = usernameExposureScore
+
+  let emailExposure = null
+  let breachCountContribution = 0
   let sensitiveFieldContribution = 0
-  if (emailExposure && emailExposure.exposedFields) {
-    const fields = emailExposure.exposedFields.map(f => f.toLowerCase())
-    
-    const hasPassword = fields.some(f => f.includes('password') || f.includes('credential'))
-    const hasPII = fields.some(f => 
-      f.includes('name') || f.includes('phone') || f.includes('address') || 
-      f.includes('dob') || f.includes('ip') || f.includes('location')
-    )
-    const hasBasic = fields.some(f => f.includes('email') || f.includes('username'))
 
-    if (hasPassword) sensitiveFieldContribution += 25
-    if (hasPII) sensitiveFieldContribution += 15
-    if (sensitiveFieldContribution === 0 && hasBasic) sensitiveFieldContribution += 5
+  if (mode === 'full' || mode === 'email') {
+    emailExposure = await checkEmailExposure(trimmedEmail)
 
-    // Prevent a single heavily breached account from contributing disproportionately
-    sensitiveFieldContribution = Math.min(sensitiveFieldContribution, 40)
+    if (emailExposure && emailExposure.breachCount) {
+      const count = emailExposure.breachCount
+      if (count === 1) breachCountContribution = 15
+      else if (count >= 2 && count <= 5) breachCountContribution = 30
+      else if (count >= 6 && count <= 15) breachCountContribution = 45
+      else if (count >= 16) breachCountContribution = 60
+    }
+
+    if (emailExposure && emailExposure.exposedFields) {
+      const fields = emailExposure.exposedFields.map(f => f.toLowerCase())
+      
+      const hasPassword = fields.some(f => f.includes('password') || f.includes('credential'))
+      const hasPII = fields.some(f => 
+        f.includes('name') || f.includes('phone') || f.includes('address') || 
+        f.includes('dob') || f.includes('ip') || f.includes('location')
+      )
+      const hasBasic = fields.some(f => f.includes('email') || f.includes('username'))
+
+      if (hasPassword) sensitiveFieldContribution += 25
+      if (hasPII) sensitiveFieldContribution += 15
+      if (sensitiveFieldContribution === 0 && hasBasic) sensitiveFieldContribution += 5
+
+      sensitiveFieldContribution = Math.min(sensitiveFieldContribution, 40)
+    }
   }
 
   let emailExposureScore = Math.min(100, breachCountContribution + sensitiveFieldContribution)
 
-  let digitalExposureScore = Math.round((0.55 * emailExposureScore) + (0.45 * usernameExposureScore))
+  let digitalExposureScore = 0
+  if (mode === 'email') {
+    digitalExposureScore = emailExposureScore
+  } else if (mode === 'username') {
+    digitalExposureScore = usernameExposureScore
+  } else {
+    digitalExposureScore = Math.round((0.55 * emailExposureScore) + (0.45 * usernameExposureScore))
+  }
 
   const summary = {
+    mode,
     totalVariations: results.length,
     highRiskCount,
     mediumRiskCount,
@@ -263,7 +275,7 @@ router.post('/', async (req, res) => {
     publicSignalMatchCount: publicSignalMatchCount + restrictedSignalMatchCount,
     restrictedSignalMatchCount,
     simulatedMatchCount: 0,
-    usernameReuseRiskScore, // Legacy mapping
+    usernameReuseRiskScore,
     emailExposureScore,
     usernameExposureScore,
     digitalExposureScore
@@ -271,12 +283,21 @@ router.post('/', async (req, res) => {
 
   const recommendations = generateRecommendations(summary, emailExposure)
 
+  // Filter recommendations strictly based on mode, to avoid showing email recommendations if username-only and vice versa
+  let filteredRecommendations = recommendations
+  if (mode === 'username') {
+    filteredRecommendations = recommendations.filter(r => !r.title.toLowerCase().includes('password') && !r.title.toLowerCase().includes('email') && !r.title.toLowerCase().includes('breach'))
+  } else if (mode === 'email') {
+    filteredRecommendations = recommendations.filter(r => r.title.toLowerCase().includes('password') || r.title.toLowerCase().includes('email') || r.title.toLowerCase().includes('breach') || r.title.toLowerCase().includes('authenticator'))
+  }
+
   return res.json({
+    mode,
     email: trimmedEmail,
     username: trimmedUsername,
     summary,
     emailExposure,
-    recommendations,
+    recommendations: filteredRecommendations,
     originalUsernameAnalysis,
     results,
   })
