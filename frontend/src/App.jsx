@@ -5,6 +5,7 @@ import monogramDark from './assets/pw-monogram.png'
 import monogramLight from './assets/pw-monogram-black.png'
 import './App.css'
 import { generatePDFReport } from './utils/pdfGenerator'
+import { MAX_USERNAME_LENGTH, getUsernameLengthError } from './utils/usernameValidation.mjs'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5053'
 
@@ -162,6 +163,8 @@ function App() {
   const [copyText, setCopyText] = useState('Copy summary')
   const [showAllSources, setShowAllSources] = useState(false)
   const [pdfError, setPdfError] = useState('')
+  const normalizedUsername = username.trim()
+  const usernameLengthError = getUsernameLengthError(normalizedUsername)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme')
     if (saved) return saved
@@ -212,7 +215,7 @@ function App() {
     }
 
     const trimmedEmail = email.trim()
-    const trimmedUsername = username.trim()
+    const trimmedUsername = normalizedUsername
 
     if ((scanMode === 'full' || scanMode === 'email') && (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail))) {
       setFormError('Please enter a valid email address.')
@@ -221,6 +224,12 @@ function App() {
     if ((scanMode === 'full' || scanMode === 'username') && !trimmedUsername) {
       setFormError('Please enter a username.')
       return
+    }
+    if (scanMode === 'full' || scanMode === 'username') {
+      if (usernameLengthError) {
+        setFormError(usernameLengthError)
+        return
+      }
     }
 
     navigate('results')
@@ -446,8 +455,13 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
                       placeholder="your_username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      aria-invalid={Boolean(usernameLengthError)}
+                      aria-describedby="username-length-hint"
                       required
                     />
+                    <span id="username-length-hint" style={{ fontSize: '12px', color: usernameLengthError ? 'var(--color-error)' : 'var(--text)', opacity: usernameLengthError ? 1 : 0.7, textAlign: 'right' }}>
+                      {usernameLengthError || `${normalizedUsername.length}/${MAX_USERNAME_LENGTH} characters after trimming`}
+                    </span>
                   </label>
                 )}
 
@@ -796,6 +810,9 @@ ${data.mode === 'email' ? 'Overall Exposure = Email Exposure Score\n' : data.mod
                     </summary>
                     <div className="detailsContent">
                       <p style={{ fontSize: '13px', color: 'var(--text)', margin: '16px 0 12px 0', lineHeight: '1.5' }}>These are algorithmically generated username variants used to detect possible reuse patterns. Similarity labels describe closeness to the submitted username, not account ownership.</p>
+                      {analysisStatus.data.summary?.variationsCapped && (
+                        <p style={{ fontSize: '13px', color: 'var(--color-warning)', margin: '0 0 12px', lineHeight: '1.5' }}>Generated variation analysis was limited to {analysisStatus.data.results.length} variants. Original username checks were completed separately.</p>
+                      )}
                       <>
                         {analysisStatus.data?.results?.length ? (
                           <ul className="variationList" style={{ marginTop: '0' }}>

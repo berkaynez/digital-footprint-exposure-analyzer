@@ -1,7 +1,8 @@
 const express = require('express')
 
 const {
-  generateUsernameVariations,
+  MAX_USERNAME_LENGTH,
+  generateUsernameVariationsWithMetadata,
 } = require('../utils/usernameGenerator')
 const { similarityScore } = require('../utils/similarity')
 const { checkGitHubUsername } = require('../utils/github')
@@ -72,11 +73,15 @@ router.post('/', async (req, res) => {
     if (!trimmedUsername || trimmedUsername.length < 3) {
       return res.status(400).json({ error: 'Username must be at least 3 characters long' })
     }
+    if (trimmedUsername.length > MAX_USERNAME_LENGTH) {
+      return res.status(400).json({ error: `Username must be ${MAX_USERNAME_LENGTH} characters or fewer` })
+    }
   }
 
   let originalPlatforms = []
   let results = []
   let variations = []
+  let variationsCapped = false
   let originalUsernameAnalysis = null
 
   let originalVerifiedMatchCount = 0
@@ -85,7 +90,9 @@ router.post('/', async (req, res) => {
   let originalRestrictedSignalMatchCount = 0
 
   if (mode === 'full' || mode === 'username') {
-    variations = generateUsernameVariations(trimmedUsername)
+    const generatedVariations = generateUsernameVariationsWithMetadata(trimmedUsername)
+    variations = generatedVariations.variations
+    variationsCapped = generatedVariations.capped
     variations = variations.filter(v => v.toLowerCase() !== trimmedUsername.toLowerCase())
 
     const originalGithub = await checkGitHubUsername(trimmedUsername)
@@ -268,6 +275,7 @@ router.post('/', async (req, res) => {
   const summary = {
     mode,
     totalVariations: results.length,
+    variationsCapped,
     highRiskCount,
     mediumRiskCount,
     lowRiskCount,
@@ -304,4 +312,3 @@ router.post('/', async (req, res) => {
 })
 
 module.exports = router
-
