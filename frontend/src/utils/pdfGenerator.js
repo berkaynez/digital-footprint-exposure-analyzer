@@ -224,6 +224,11 @@ export function generatePDFReport(data) {
       });
     
     usernameData.push(['Original Username Matches', matchedPlatforms.length > 0 ? safeJoin(matchedPlatforms, ', ') : 'None']);
+    const variationCount = Number(data.summary?.totalVariations || 0);
+    const variationSummary = data.summary?.variationsCapped
+      ? `${variationCount} (limited; original username checks completed separately)`
+      : `${variationCount}`;
+    usernameData.push(['Generated Variations', variationSummary]);
     usernameData.push(['Close Variant Matches', `${data.summary?.highRiskCount || 0}`]);
     usernameData.push(['Partial Variant Matches', `${data.summary?.mediumRiskCount || 0}`]);
     usernameData.push(['Weak Variant Matches', `${data.summary?.lowRiskCount || 0}`]);
